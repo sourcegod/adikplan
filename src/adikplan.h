@@ -50,8 +50,8 @@ class AdikPlayer;
 class AdikTransport; // Nouvelle classe à déclarer ici
 */
 
-static void processAudioCallback(float* outputBuffer, int numSamples, void* userData);
 /*
+static void processAudioCallback(float* outputBuffer, int numSamples, void* userData);
 class AdikSound {
 public:
     std::vector<float> audioData;

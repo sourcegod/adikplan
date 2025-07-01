@@ -1,3 +1,6 @@
+#ifndef ADIKTRANSPORT_H
+#define ADIKTRANSPORT_H
+
 
 #include "adikplayer.h"
 #include <string>
@@ -199,3 +202,4 @@ public:
 };
 
 
+#endif // ADIKTRANSPORT_H
