@@ -1,1 +1,1 @@
-Similation on Step Sequencer
+Test and Similation on tiny Step Sequencer
