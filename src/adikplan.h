@@ -1,23 +1,47 @@
 // adikplan.h
 #pragma once
 
-#include <vector>
+/*
+// Inclure toutes les classes dans l'ordre de dépendance
+#include "AdikSound.h"
+#include "AdikInstrument.h"
+#include "AdikEvent.h"
+#include "AdikChannel.h"
+#include "AdikMixer.h"
+#include "AdikTrack.h"
+#include "AdikSequence.h"
+#include "AdikSong.h"
+#include "AdikPlayer.h"
+*/
+
+// Vous pouvez également inclure des bibliothèques standards ici si elles sont utilisées globalement
 #include <string>
-#include <cmath>
-#include <memory>
-#include <numeric> // For std::iota
-#include <iostream>
+#include <vector>
 #include <map>
+#include <memory>
+#include <iostream>
+#include <stdexcept>
+#include <cmath>
+#include <numeric>
+#include <algorithm> // Pour std::fill
+// Pour le délai simulé
+#include <chrono>
+#include <thread>
+
+
+//
 // --- Constants (peuvent être déplacées dans un fichier de configuration global si nécessaire) ---
 const float PI = 3.14159265358979323846f;
 const float MAX_AMPLITUDE = 0.8f; // Pour éviter la saturation lors de la génération de son simple
 const int DEFAULT_SAMPLE_RATE = 44100; // Taux d'échantillonnage par défaut pour la génération de son
                                        //
+// Déclaration anticipée du Player pour le callback
+class AdikPlayer;
 // --- Déclarations anticipées ---
 class AdikMixer;
 class AdikChannel;
 
-
+static void processAudioCallback(float* outputBuffer, int numSamples, void* userData);
 class AdikSound {
 public:
     std::vector<float> audioData;
@@ -321,7 +345,7 @@ public:
         throw std::out_of_range("Indice de piste hors limites.");
     }
 };
-
+//
 // --- AdikSong.h ---
 // Représente un morceau, composé d'un enchaînement de séquences.
 class AdikSong {
@@ -372,6 +396,9 @@ public:
     }
 };
 
+
+
+//
 // --- AdikPlayer.h ---
 // Le moteur principal de la drum machine.
 // Gère tous les instruments, les morceaux, et la lecture.
@@ -605,103 +632,66 @@ public:
         std::cout << "Lecture arrêtée." << std::endl;
     }
 
-    // La nouvelle "advanceStep" est maintenant intégrée dans processAudioCallback
-    // Elle ne sera plus appelée directement pour avancer le temps.
+    // Rétablit l'ancienne fonction AdikPlayer::advanceStep
+    // Gère l'avancement du séquenceur, le déclenchement des événements et le bouclage.
+    void advanceStep(std::shared_ptr<AdikSequence> currentPlayingSequence) {
+        if (!currentPlayingSequence) return;
 
-    // NOUVEAU: La fonction de rappel audio principale
-    // Elle remplit un buffer audio avec les données générées.
-    void processAudioCallback(float* outputBuffer, int numSamples) {
-        if (!isPlaying) {
-            std::fill(outputBuffer, outputBuffer + numSamples, 0.0f); // Remplir de silence si pas en lecture
-            return;
-        }
+        // Affichage textuel pour le pas
+        int currentMeasure = currentStepInSequence / currentPlayingSequence->stepsPerMeasure;
+        int stepInMeasure = currentStepInSequence % currentPlayingSequence->stepsPerMeasure;
 
-        std::shared_ptr<AdikSequence> currentPlayingSequence = nullptr;
+        std::cout << "Mode: " << (currentMode == SEQUENCE_MODE ? "SEQUENCE" : "SONG")
+                  << " | Séquence: " << currentPlayingSequence->name
+                  << " | Mesure: " << currentMeasure + 1
+                  << " | Pas: " << stepInMeasure << " (Abs: " << currentStepInSequence << ")"
+                  << " | Événements: ";
 
-        if (currentMode == SEQUENCE_MODE) {
-            if (selectedSequenceInPlayerIndex >= 0 && selectedSequenceInPlayerIndex < sequenceList.size()) {
-                currentPlayingSequence = sequenceList[selectedSequenceInPlayerIndex];
+        bool hasPlayedSound = false;
+        bool hasSoloedTrack = false;
+        for (const auto& track : currentPlayingSequence->tracks) {
+            if (track.isSoloed) {
+                hasSoloedTrack = true;
+                break;
             }
-        } else { // SONG_MODE
-            if (currentSong && currentSequenceIndexInSong >= 0 && currentSequenceIndexInSong < currentSong->sequences.size()) {
-                currentPlayingSequence = currentSong->sequences[currentSequenceIndexInSong];
+        }
+
+        // Déclencher les événements pour ce nouveau pas
+        for (auto& track : currentPlayingSequence->tracks) {
+            if (track.isMuted || (hasSoloedTrack && !track.isSoloed)) {
+                continue;
             }
-        }
 
-        if (!currentPlayingSequence) {
-            std::fill(outputBuffer, outputBuffer + numSamples, 0.0f);
-            return;
-        }
-
-        // Boucle pour remplir le buffer audio sample par sample
-        for (int i = 0; i < numSamples; ++i) {
-            // Vérifier si nous devons déclencher un nouvel événement (passer à un nouveau pas)
-            if (currentSampleInStep >= samplesPerStep) {
-                // Avancer le pas du séquenceur
-                currentSampleInStep = 0; // Réinitialiser le compteur de samples pour le nouveau pas
-
-                // Affichage textuel pour le pas
-                int currentMeasure = currentStepInSequence / currentPlayingSequence->stepsPerMeasure;
-                int stepInMeasure = currentStepInSequence % currentPlayingSequence->stepsPerMeasure;
-
-                std::cout << "Mode: " << (currentMode == SEQUENCE_MODE ? "SEQUENCE" : "SONG")
-                          << " | Séquence: " << currentPlayingSequence->name
-                          << " | Mesure: " << currentMeasure + 1
-                          << " | Pas: " << stepInMeasure << " (Abs: " << currentStepInSequence << ")"
-                          << " | Événements: ";
-
-                bool hasPlayedSound = false;
-                bool hasSoloedTrack = false;
-                for (const auto& track : currentPlayingSequence->tracks) {
-                    if (track.isSoloed) {
-                        hasSoloedTrack = true;
-                        break;
-                    }
-                }
-
-                // Déclencher les événements pour ce nouveau pas
-                for (auto& track : currentPlayingSequence->tracks) {
-                    if (track.isMuted || (hasSoloedTrack && !track.isSoloed)) {
-                        continue;
-                    }
-
-                    std::vector<AdikEvent*> trackEvents = track.getEventsAtStep(currentStepInSequence);
-                    for (AdikEvent* event : trackEvents) {
-                        if (event->instrument) {
-                            float finalVelocity = event->velocity * track.volume;
-                            // Route le son vers le mixeur; le mixeur gère maintenant l'instrument pendant sa durée de son
-                            mixer.routeSound(track.mixerChannelIndex, event->instrument, finalVelocity, event->pan, event->pitch);
-                            hasPlayedSound = true;
-                        }
-                    }
-                }
-                if (!hasPlayedSound) {
-                    std::cout << "Rien.";
-                }
-                std::cout << std::endl;
-                mixer.displayMixerStatus(); // Affiche l'état du mixeur à chaque nouveau pas
-                std::cout << std::endl;
-
-                // Passer au pas suivant
-                currentStepInSequence++;
-                if (currentStepInSequence >= currentPlayingSequence->lengthInSteps) {
-                    currentStepInSequence = 0; // Reboucler le pas
-
-                    if (currentMode == SONG_MODE) {
-                        currentSequenceIndexInSong++; // Passer à la séquence suivante du morceau
-                        if (currentSequenceIndexInSong >= currentSong->sequences.size()) {
-                            currentSequenceIndexInSong = 0; // Reboucler le morceau
-                            std::cout << "--- Morceau bouclé ---" << std::endl;
-                        }
-                    }
+            std::vector<AdikEvent*> trackEvents = track.getEventsAtStep(currentStepInSequence);
+            for (AdikEvent* event : trackEvents) {
+                if (event->instrument) {
+                    float finalVelocity = event->velocity * track.volume;
+                    // Route le son vers le mixeur; le mixeur gère maintenant l'instrument pendant sa durée de son
+                    mixer.routeSound(track.mixerChannelIndex, event->instrument, finalVelocity, event->pan, event->pitch);
+                    hasPlayedSound = true;
                 }
             }
-            currentSampleInStep++; // Avancer le sample dans le pas actuel
         }
+        if (!hasPlayedSound) {
+            std::cout << "Rien.";
+        }
+        std::cout << std::endl;
+        mixer.displayMixerStatus(); // Affiche l'état du mixeur à chaque nouveau pas
+        std::cout << std::endl;
 
-        // Maintenant que tous les événements pour les pas qui ont eu lieu dans ce buffer
-        // sont routés vers le mixer, demander au mixer de mixer tous les canaux.
-        mixer.mixChannels(outputBuffer, numSamples);
+        // Passer au pas suivant
+        currentStepInSequence++;
+        if (currentStepInSequence >= currentPlayingSequence->lengthInSteps) {
+            currentStepInSequence = 0; // Reboucler le pas dans la séquence actuelle
+
+            if (currentMode == SONG_MODE) {
+                currentSequenceIndexInSong++; // Passer à la séquence suivante du morceau
+                if (currentSequenceIndexInSong >= currentSong->sequences.size()) {
+                    currentSequenceIndexInSong = 0; // Reboucler le morceau
+                    std::cout << "--- Morceau bouclé ---" << std::endl;
+                }
+            }
+        }
     }
 
     // Simuler le processus de lecture audio en temps réel
@@ -712,87 +702,61 @@ public:
 
         long long samplesProcessed = 0;
         while (samplesProcessed < totalSamplesToSimulate) {
-            processAudioCallback(audioOutputBuffer.data(), bufferSizeSamples);
+            // Appeler la fonction processAudioCallback globale, en lui passant 'this' comme userData
+            ::processAudioCallback(audioOutputBuffer.data(), bufferSizeSamples, this);
             samplesProcessed += bufferSizeSamples;
 
             // Ici, dans une vraie application, le buffer audioOutputBuffer serait envoyé à la carte son.
-            // Pour la simulation, on pourrait imprimer une représentation simplifiée du buffer,
-            // ou juste continuer pour simuler le temps qui passe.
-            // Pour l'instant, on se contente des cout des événements.
-
-            // Ajouter un délai réaliste pour la simulation
-            // Cette partie serait gérée par l'API audio dans un vrai système
-            // std::this_thread::sleep_for(std::chrono::milliseconds((long long)(bufferSizeSamples * 1000.0 / sampleRate)));
+            // 3. Décommenter la ligne pour ajouter un délai réaliste
+            std::this_thread::sleep_for(std::chrono::milliseconds((long long)(bufferSizeSamples * 1000.0 / sampleRate)));
         }
         stop();
     }
 };
 
-/*
-// --- main.cpp ---
-int main() {
-    AdikPlayer player;
 
-    // --- DÉMONSTRATION DU MODE SÉQUENCE EN TEMPS RÉEL (SIMULÉ) ---
-    std::cout << "========== MODE SÉQUENCE (TEMPS RÉEL SIMULÉ) ==========" << std::endl;
-    player.setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+// --- Nouvelle fonction de rappel audio globale et statique ---
+// 1. Rendre la fonction processAudioCallback indépendante et statique
+// Elle prend un pointeur void* userData en paramètre, qui sera casté en AdikPlayer.
+static void processAudioCallback(float* outputBuffer, int numSamples, void* userData) {
+    // Caster userData en AdikPlayer*
+    AdikPlayer* playerData = static_cast<AdikPlayer*>(userData);
 
-    player.selectSequenceInPlayer(0); // "Intro Groove (2 Mesures)"
-    std::cout << "\n--- Simulation en temps réel de la Séquence 'Intro Groove' (Player Index 0) ---" << std::endl;
-    // Jouons pendant 5 secondes pour voir plusieurs boucles si la séquence est courte
-    player.simulateRealtimePlayback(5);
-
-    std::cout << "\n--- Réduction du volume du Charley Fermé sur Séquence 0 du Player et relecture en temps réel ---" << std::endl;
-    player.sequenceList[0]->getTrack(2).volume = 0.2f;
-    player.simulateRealtimePlayback(5);
-
-    player.selectSequenceInPlayer(1); // "Chorus Beat (1 Mesure)"
-    std::cout << "\n--- Simulation en temps réel de la Séquence 'Chorus Beat' (Player Index 1) ---" << std::endl;
-    player.simulateRealtimePlayback(3); // Jouons 3 secondes
-
-    // --- DÉMONSTRATION DU MODE SONG EN TEMPS RÉEL (SIMULÉ) ---
-    std::cout << "\n\n========== MODE SONG (TEMPS RÉEL SIMULÉ) ==========" << std::endl;
-    player.setPlaybackMode(AdikPlayer::SONG_MODE);
-
-    player.clearCurrentSong();
-    player.currentSong->name = "Mon Morceau Final (Demo Temps Reel)";
-
-    player.addSequenceFromPlayerToSong(0);
-    player.addSequenceFromPlayerToSong(1, 2);
-    player.addSequenceFromPlayerToSong(0);
-
-    std::cout << "\nSéquences dans le morceau '" << player.currentSong->name << "':" << std::endl;
-    for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
-        std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name
-                  << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+    if (!playerData || !playerData->isPlaying) {
+        std::fill(outputBuffer, outputBuffer + numSamples, 0.0f); // Remplir de silence si pas en lecture
+        return;
     }
 
-    std::cout << "\n--- Lecture en temps réel simulée du Morceau '" << player.currentSong->name << "' ---" << std::endl;
-    // Jouons le morceau pendant un temps suffisant pour qu'il boucle au moins une fois
-    // Total steps: 32 (seq0) + 16 (seq1) + 16 (seq1) + 32 (seq0) = 96 steps
-    // Samples per step = 44100 * 60 / 120 / 4 = 5512.5 samples/step
-    // Total samples for song: 96 * 5512.5 = 529200 samples
-    // Total time for song: 529200 / 44100 = 12 seconds
-    player.simulateRealtimePlayback(15); // Joue pendant 15 secondes pour voir le bouclage
-
-    std::cout << "\n--- Mute de la caisse claire dans la PREMIERE séquence du morceau et relecture en temps réel ---" << std::endl;
-    if (!player.currentSong->sequences.empty()) {
-        std::cout << "Muting snare track on sequence '" << player.currentSong->sequences[0]->name << "' (shared_ptr address: " << player.currentSong->sequences[0].get() << ")" << std::endl;
-        player.currentSong->sequences[0]->getTrack(1).isMuted = true;
+    // Récupérer la séquence en cours de lecture
+    std::shared_ptr<AdikSequence> currentPlayingSequence = nullptr;
+    if (playerData->currentMode == AdikPlayer::SEQUENCE_MODE) {
+        if (playerData->selectedSequenceInPlayerIndex >= 0 && playerData->selectedSequenceInPlayerIndex < playerData->sequenceList.size()) {
+            currentPlayingSequence = playerData->sequenceList[playerData->selectedSequenceInPlayerIndex];
+        }
+    } else { // SONG_MODE
+        if (playerData->currentSong && playerData->currentSequenceIndexInSong >= 0 && playerData->currentSequenceIndexInSong < playerData->currentSong->sequences.size()) {
+            currentPlayingSequence = playerData->currentSong->sequences[playerData->currentSequenceIndexInSong];
+        }
     }
-    player.simulateRealtimePlayback(10); // Relecture pendant 10 secondes
 
-    std::cout << "\n--- Suppression de la séquence à l'index 1 du morceau et relecture en temps réel ---" << std::endl;
-    player.deleteSequenceFromCurrentSong(1);
-
-    std::cout << "\nSéquences restantes dans le morceau '" << player.currentSong->name << "':" << std::endl;
-    for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
-        std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name
-                  << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+    if (!currentPlayingSequence) {
+        std::fill(outputBuffer, outputBuffer + numSamples, 0.0f);
+        return;
     }
-    player.simulateRealtimePlayback(10); // Relecture après suppression
 
-    return 0;
+    // Boucle pour remplir le buffer audio sample par sample
+    for (int i = 0; i < numSamples; ++i) {
+        // Vérifier si nous devons déclencher un nouvel événement (passer à un nouveau pas)
+        if (playerData->currentSampleInStep >= playerData->samplesPerStep) {
+            // 2. La fonction processAudioCallback appellera playerData->advanceStep
+            playerData->advanceStep(currentPlayingSequence); // Passer la séquence au besoin
+            playerData->currentSampleInStep = 0; // Réinitialiser le compteur de samples pour le nouveau pas
+        }
+        playerData->currentSampleInStep++; // Avancer le sample dans le pas actuel
+    }
+
+    // Demander au mixeur de mixer tous les canaux pour ce buffer
+    playerData->mixer.mixChannels(outputBuffer, numSamples);
 }
-*/
+
 
