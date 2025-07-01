@@ -1,16 +1,17 @@
 #ifndef ADIKMIXER_H
 #define ADIKMIXER_H
 
-#include "adikchannel.h"
-// Important : AdikChannel.h DOIT être inclus avant AdikMixer.h
-// car AdikMixer contient un std::vector<AdikChannel>,
-// ce qui signifie qu'il a besoin de la définition complète de AdikChannel.
-// De même, AdikChannel a besoin de AdikInstrument, donc AdikInstrument.h doit être inclus avant AdikChannel.h
-
 #include <vector>
 #include <string> // Pour std::string dans displayMixerStatus
 #include <iostream>
 #include <memory> // Pour std::shared_ptr
+
+// Important : AdikChannel.h DOIT être inclus avant AdikMixer.h
+// car AdikMixer contient un std::vector<AdikChannel>,
+// ce qui signifie qu'il a besoin de la définition complète de AdikChannel.
+// De même, AdikChannel a besoin de AdikInstrument, donc AdikInstrument.h doit être inclus avant AdikChannel.h
+#include "adikchannel.h"
+
 
 class AdikMixer {
 public:

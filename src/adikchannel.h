@@ -7,7 +7,7 @@
 
 // Important : AdikInstrument.h DOIT être inclus avant AdikChannel.h
 // car AdikChannel contient un std::shared_ptr<AdikInstrument> et appelle des méthodes sur cet instrument.
-#include "AdikInstrument.h" // Assurez-vous que AdikInstrument.h contient la définition complète de AdikInstrument
+#include "adikinstrument.h" // Assurez-vous que AdikInstrument.h contient la définition complète de AdikInstrument
 
 class AdikChannel {
 public:

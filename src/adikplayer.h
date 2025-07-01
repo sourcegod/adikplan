@@ -328,4 +328,4 @@ public:
 };
 
 
-#endif ADIKPLAYER_H
+#endif // ADIKPLAYER_H
