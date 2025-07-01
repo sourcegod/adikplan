@@ -8,7 +8,9 @@
  * ***/
 
 #include "adikplan.h"
-// #include "AdikTransport.h" // Inclure la nouvelle classe AdikTransport
+#include "audioengine.h"
+#include "adikplayer.h"
+#include "adiktransport.h" // Inclure la nouvelle classe AdikTransport
 
 #include <iostream>
 #include <string>

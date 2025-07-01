@@ -14,7 +14,7 @@
 #include "AdikPlayer.h"
 */
 // #include "adiktransport.h"
-#include "adikplayer.h"
+// #include "adikplayer.h"
 // Vous pouvez également inclure des bibliothèques standards ici si elles sont utilisées globalement
 #include <string>
 #include <vector>
@@ -30,7 +30,7 @@
 #include <thread>
 #include <iomanip> // Pour std::fixed et std::setprecision
 
-
+/*
 //
 // --- Constants (peuvent être déplacées dans un fichier de configuration global si nécessaire) ---
 const float PI = 3.14159265358979323846f;
@@ -48,6 +48,7 @@ class AdikSequence;
 class AdikSong;
 class AdikPlayer;
 class AdikTransport; // Nouvelle classe à déclarer ici
+*/
 
 static void processAudioCallback(float* outputBuffer, int numSamples, void* userData);
 /*
@@ -144,7 +145,6 @@ public:
         sound.resetPlayback();
     }
 };
-*/
 
 // --- AdikEvent.h ---
 // Représente un événement unique (un "hit" sur un instrument)
@@ -160,6 +160,7 @@ public:
     AdikEvent(std::shared_ptr<AdikInstrument> instr, int s, float vel = 1.0f, float p = 0.0f, float pi = 0.0f)
         : instrument(instr), step(s), velocity(vel), pan(p), pitch(pi) {}
 };
+*/
 
 /*
 // --- AdikChannel.h ---
@@ -293,6 +294,7 @@ public:
 */
 
 
+/*
 // --- AdikTrack.h ---
 // Représente une piste au sein d'une séquence.
 // Contient son propre "patternData" (une collection d'événements) et des contrôles de mixage.
@@ -471,6 +473,7 @@ public:
     }
 
 };
+*/
 
 
 
@@ -789,6 +792,7 @@ public:
 */
 
 
+/*
 // --- Nouvelle fonction de rappel audio globale et statique ---
 // 1. Rendre la fonction processAudioCallback indépendante et statique
 // Elle prend un pointeur void* userData en paramètre, qui sera casté en AdikPlayer.
@@ -832,5 +836,6 @@ static void processAudioCallback(float* outputBuffer, int numSamples, void* user
     // Demander au mixeur de mixer tous les canaux pour ce buffer
     playerData->mixer.mixChannels(outputBuffer, numSamples);
 }
+*/
 
 
