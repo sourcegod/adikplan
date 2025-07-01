@@ -1,18 +1,14 @@
-/***
- * File: adikplan.h
- * Architecture test for adikdrum
- * Compile: g++ -Wall -pedantic -Wextra adikmain.cpp -o adikmain
- * Date: Tue, 24/06/2025
- * Author: Coolbrother
- *
- * ***/
-
 #include <string>
 #include <vector>
 #include <map>
-#include <memory>   // Pour std::shared_ptr, std::make_shared
-#include <iostream> // Pour les affichages de démonstration
+#include <memory>    // Pour std::shared_ptr, std::make_shared
+#include <iostream>  // Pour les affichages de démonstration
 #include <stdexcept> // Pour std::out_of_range, std::runtime_error
+
+// --- Déclarations anticipées ---
+// Ceci est nécessaire car AdikInstrument et AdikMixer peuvent se référencer mutuellement.
+class AdikMixer; 
+class AdikChannel;
 
 // --- AdikInstrument.h ---
 // Représente la définition d'un son de batterie (Kick, Snare, Hi-Hat, etc.)
@@ -30,13 +26,10 @@ public:
     AdikInstrument(const std::string& id, const std::string& name, const std::string& path)
         : id(id), name(name), audioFilePath(path), defaultVolume(1.0f), defaultPan(0.0f), defaultPitch(0.0f) {}
 
-    // Méthode pour jouer le son de l'instrument (sera appelée par le moteur de lecture)
-    // La vélocité et le panoramique finaux sont calculés avant cet appel.
+    // Méthode pour "jouer" le son de l'instrument avec les paramètres finaux.
+    // Dans une implémentation réelle, ceci déclencherait la lecture de l'échantillon audio
+    // via une API audio, en appliquant ces paramètres.
     void play(float finalVelocity, float finalPan, float finalPitch) const {
-        // Logique de lecture de l'échantillon audio ici
-        // Utiliser audioFilePath, et appliquer finalVelocity, finalPan, finalPitch
-        // Note: L'implémentation réelle nécessiterait une bibliothèque audio (ex: PortAudio, SFML Audio, OpenAL)
-        // Pour cet exemple, nous allons juste simuler la lecture.
         std::cout << name << " (" << id << ") [Vel: " << finalVelocity << ", Pan: " << finalPan << ", Pitch: " << finalPitch << "]";
     }
 };
@@ -56,19 +49,119 @@ public:
         : instrument(instr), step(s), velocity(vel), pan(p), pitch(pi) {}
 };
 
+// --- AdikChannel.h ---
+// Représente un canal individuel sur le mixeur.
+// Il simule la réception et l'affichage des informations d'un son en cours de lecture.
+class AdikChannel {
+public:
+    int id;
+    std::string currentInstrumentName;
+    float currentVelocity;
+    float currentPan;
+    float currentPitch;
+    bool isPlaying; // Indique si un son est actuellement "actif" sur ce canal
+
+    AdikChannel(int channelId)
+        : id(channelId), currentInstrumentName(""), currentVelocity(0.0f), currentPan(0.0f), currentPitch(0.0f), isPlaying(false) {}
+
+    // Met à jour l'état du canal avec un nouveau son
+    void receiveSound(const std::string& instrName, float vel, float pan, float pitch) {
+        currentInstrumentName = instrName;
+        currentVelocity = vel;
+        currentPan = pan;
+        currentPitch = pitch;
+        isPlaying = true;
+    }
+
+    // Efface l'état du canal (simule la fin d'une note ou un canal silencieux)
+    void clear() {
+        currentInstrumentName = "";
+        currentVelocity = 0.0f;
+        currentPan = 0.0f;
+        currentPitch = 0.0f;
+        isPlaying = false;
+    }
+
+    // Affiche le statut actuel du canal pour la simulation
+    void displayStatus() const {
+        if (isPlaying) {
+            std::cout << "C" << id << ": " << currentInstrumentName << " [V:" << currentVelocity << ", Pn:" << currentPan << ", Pt:" << currentPitch << "] ";
+        } else {
+            std::cout << "C" << id << ": (Vide) ";
+        }
+    }
+};
+
+// --- AdikMixer.h ---
+// Gère et route les sons vers les canaux.
+// Il centralise la "sortie" audio de la drum machine.
+class AdikMixer {
+public:
+    std::vector<AdikChannel> channels;
+    static const int NUM_MIXER_CHANNELS = 8; // Nombre fixe de canaux de mixage pour cet exemple
+
+    AdikMixer() {
+        channels.reserve(NUM_MIXER_CHANNELS);
+        for (int i = 0; i < NUM_MIXER_CHANNELS; ++i) {
+            channels.emplace_back(i + 1); // Les canaux sont numérotés de 1 à NUM_MIXER_CHANNELS
+        }
+        std::cout << "AdikMixer initialisé avec " << NUM_MIXER_CHANNELS << " canaux." << std::endl;
+    }
+
+    // Route un événement sonore vers un canal spécifique du mixeur.
+    // C'est ici que l'instrument est finalement instancié pour "jouer" son son.
+    void routeSound(int channelIndex, std::shared_ptr<AdikInstrument> instrument, float finalVelocity, float finalPan, float finalPitch) {
+        if (channelIndex < 1 || channelIndex > NUM_MIXER_CHANNELS) {
+            std::cerr << "Erreur Mixeur: Canal " << channelIndex << " hors limites. Son non routé." << std::endl;
+            return;
+        }
+        if (!instrument) {
+            std::cerr << "Erreur Mixeur: Tentative de router un instrument nul sur le canal " << channelIndex << "." << std::endl;
+            return;
+        }
+
+        // La logique d'affichage de l'instrument qui joue est déplacée ici.
+        // Cela simule que le mixeur gère la sortie effective de chaque instrument.
+        std::cout << "[MIXER - Canal " << channelIndex << "] ";
+        instrument->play(finalVelocity, finalPan, finalPitch); // L'instrument "joue" son son via le mixeur.
+        
+        // Le canal du mixeur enregistre l'information du son en cours pour son état interne
+        channels[channelIndex - 1].receiveSound(instrument->name, finalVelocity, finalPan, finalPitch);
+    }
+
+    // Affiche l'état actuel de tous les canaux du mixeur.
+    void displayMixerStatus() const {
+        std::cout << "État du Mixeur: [ ";
+        for (const auto& channel : channels) {
+            channel.displayStatus();
+        }
+        std::cout << "]" << std::endl;
+    }
+
+    // Efface tous les sons des canaux. Ceci est appelé à chaque pas pour simuler
+    // le fait que les notes sont éphémères et ne persistent pas indéfiniment.
+    void clearAllChannels() {
+        for (auto& channel : channels) {
+            channel.clear();
+        }
+    }
+};
+
+
 // --- AdikTrack.h ---
 // Représente une piste au sein d'une séquence.
 // Contient son propre "patternData" (une collection d'événements) et des contrôles de mixage.
 class AdikTrack {
 public:
-    std::string name;               // Nom de la piste (ex: "Kick", "Hi-Hat Groove", "Percussions")
-    std::vector<AdikEvent> events;  // Le "patternData" de cette piste : liste des événements
-    bool isMuted;                   // La piste est-elle mutée ?
-    bool isSoloed;                  // La piste est-elle solo ?
-    float volume;                   // Volume de la piste (0.0 à 1.0)
+    std::string name;                   // Nom de la piste (ex: "Kick", "Hi-Hat Groove", "Percussions")
+    std::vector<AdikEvent> events;      // Le "patternData" de cette piste : liste des événements
+    bool isMuted;                       // La piste est-elle mutée ?
+    bool isSoloed;                      // La piste est-elle solo ?
+    float volume;                       // Volume de la piste (0.0 à 1.0)
+    int mixerChannelIndex;              // Le canal du mixeur auquel cette piste est assignée (1-indexé)
 
-    AdikTrack(const std::string& n = "Nouvelle Piste") // La longueur de piste est gérée par la séquence
-        : name(n), isMuted(false), isSoloed(false), volume(1.0f) {}
+    AdikTrack(const std::string& n = "Nouvelle Piste", int channelIdx = 1)
+        : name(n), isMuted(false), isSoloed(false), volume(1.0f), mixerChannelIndex(channelIdx) {}
 
     // Ajoute un événement à la piste. 'step' est un pas ABSOLU dans la séquence.
     void addEvent(std::shared_ptr<AdikInstrument> instrument, int step, float velocity = 1.0f, float pan = 0.0f, float pitch = 0.0f) {
@@ -78,8 +171,8 @@ public:
     // Récupère les événements pour un pas donné sur cette piste
     std::vector<AdikEvent*> getEventsAtStep(int currentStep) {
         std::vector<AdikEvent*> currentStepEvents;
-        if (isMuted) return currentStepEvents; // Si la piste est mutée, ne retourne rien
-
+        // La logique de mute/solo est maintenant gérée par AdikSequence/AdikPlayer
+        // ici on ne retourne que les événements de cette piste
         for (AdikEvent& event : events) {
             if (event.step == currentStep) {
                 currentStepEvents.push_back(&event);
@@ -94,11 +187,11 @@ public:
 // Gère sa longueur en termes de mesures et de pas par mesure.
 class AdikSequence {
 public:
-    std::string name;             // Nom de la séquence (ex: "Verse 1", "Chorus", "Breakdown")
-    int stepsPerMeasure;          // Nombre de pas par mesure (ex: 16 pour une mesure 4/4)
-    int numberOfMeasures;         // Nombre de mesures dans la séquence (ex: 2 pour une séquence de 2 mesures)
-    int lengthInSteps;            // Longueur totale de la séquence en pas (numberOfMeasures * stepsPerMeasure)
-    std::vector<AdikTrack> tracks; // Les 16 pistes de cette séquence
+    std::string name;               // Nom de la séquence (ex: "Verse 1", "Chorus", "Breakdown")
+    int stepsPerMeasure;            // Nombre de pas par mesure (ex: 16 pour une mesure 4/4)
+    int numberOfMeasures;           // Nombre de mesures dans la séquence (ex: 2 pour une séquence de 2 mesures)
+    int lengthInSteps;              // Longueur totale de la séquence en pas (numberOfMeasures * stepsPerMeasure)
+    std::vector<AdikTrack> tracks;  // Les 16 pistes de cette séquence
 
     static const int NUM_TRACKS = 16; // Nombre fixe de pistes par séquence
 
@@ -107,7 +200,9 @@ public:
         lengthInSteps = numberOfMeasures * stepsPerMeasure; // Calcul de la longueur totale
         tracks.reserve(NUM_TRACKS);
         for (int i = 0; i < NUM_TRACKS; ++i) {
-            tracks.emplace_back("Piste " + std::to_string(i + 1));
+            // Assigner chaque piste à un canal de mixage distinct.
+            // On s'assure que le channelIndex reste dans les limites de AdikMixer::NUM_MIXER_CHANNELS
+            tracks.emplace_back("Piste " + std::to_string(i + 1), (i % AdikMixer::NUM_MIXER_CHANNELS) + 1);
         }
     }
 
@@ -118,42 +213,13 @@ public:
         }
         throw std::out_of_range("Indice de piste hors limites.");
     }
-
-    // Retourne tous les événements à jouer pour un pas donné, en tenant compte des mutes/solos
-    std::vector<std::pair<AdikEvent*, float>> getAllEventsAtStep(int currentStep) {
-        std::vector<std::pair<AdikEvent*, float>> allEventsToPlay;
-        bool hasSoloedTrack = false;
-        
-        // Vérifier s'il y a au moins une piste en solo
-        for (const auto& track : tracks) {
-            if (track.isSoloed) {
-                hasSoloedTrack = true;
-                break;
-            }
-        }
-
-        for (auto& track : tracks) {
-            // Si la piste est mutée, ou si une piste est en solo et que celle-ci ne l'est pas, on l'ignore
-            if (track.isMuted || (hasSoloedTrack && !track.isSoloed)) {
-                continue;
-            }
-
-            std::vector<AdikEvent*> trackEvents = track.getEventsAtStep(currentStep);
-            for (AdikEvent* event : trackEvents) {
-                // Le volume final de l'événement est le volume de l'événement multiplié par le volume de la piste
-                float finalVelocity = event->velocity * track.volume;
-                allEventsToPlay.push_back({event, finalVelocity});
-            }
-        }
-        return allEventsToPlay;
-    }
 };
 
 // --- AdikSong.h ---
 // Représente un morceau, composé d'un enchaînement de séquences.
 class AdikSong {
 public:
-    std::string name;                   // Nom du morceau
+    std::string name;                           // Nom du morceau
     std::vector<std::shared_ptr<AdikSequence>> sequences; // La liste des séquences du morceau
 
     AdikSong(const std::string& n = "Nouveau Morceau") : name(n) {}
@@ -214,20 +280,22 @@ public:
 
     std::map<std::string, std::shared_ptr<AdikInstrument>> globalInstruments; // Tous les instruments disponibles
     std::vector<std::shared_ptr<AdikSequence>> sequenceList;                  // La liste fixe de 16 séquences disponibles pour le Player
-    std::shared_ptr<AdikSong> currentSong;                                   // Le morceau actuellement chargé
+    std::shared_ptr<AdikSong> currentSong;                                    // Le morceau actuellement chargé
+
+    AdikMixer mixer; // L'instance du mixeur gérée par le Player
 
     int tempoBPM;                   // Tempo global en BPM
     int currentStepInSequence;      // Le pas actuel en cours de lecture dans la séquence
     bool isPlaying;                 // Indique si le séquenceur est en lecture
 
     // Variables de contrôle des modes
-    PlaybackMode currentMode;                   // Mode de lecture actuel
-    int selectedSequenceInPlayerIndex;          // Index de la séquence sélectionnée dans sequenceList (pour SEQUENCE_MODE)
-    int currentSequenceIndexInSong;             // Index de la séquence actuellement jouée dans le morceau (pour SONG_MODE)
+    PlaybackMode currentMode;               // Mode de lecture actuel
+    int selectedSequenceInPlayerIndex;      // Index de la séquence sélectionnée dans sequenceList (pour SEQUENCE_MODE)
+    int currentSequenceIndexInSong;         // Index de la séquence actuellement jouée dans le morceau (pour SONG_MODE)
 
 
     AdikPlayer() : tempoBPM(120), currentStepInSequence(0), isPlaying(false),
-                   currentMode(SEQUENCE_MODE), selectedSequenceInPlayerIndex(0), currentSequenceIndexInSong(0) {
+                     currentMode(SEQUENCE_MODE), selectedSequenceInPlayerIndex(0), currentSequenceIndexInSong(0) {
 
         // Initialiser quelques instruments par défaut
         addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav"));
@@ -255,9 +323,9 @@ public:
     // Fonction utilitaire pour peupler une séquence de démonstration
     // Prend en compte le nombre de mesures et de pas par mesure.
     void populateDemoSequence(std::shared_ptr<AdikSequence> seq_ptr, const std::string& name, 
-                              const std::string& kickId, const std::string& snareId, 
-                              const std::string& hihatClosedId, const std::string& additionalId,
-                              int numMeasures, int spm) {
+                                  const std::string& kickId, const std::string& snareId, 
+                                  const std::string& hihatClosedId, const std::string& additionalId,
+                                  int numMeasures, int spm) {
         if (!seq_ptr) return; // Sécurité
 
         seq_ptr->name = name;
@@ -270,25 +338,28 @@ public:
             track.events.clear();
         }
         
-        // Piste 1: Grosse Caisse
+        // Piste 1: Grosse Caisse (assignée au canal 1 du mixeur par défaut)
         AdikTrack& kickTrack = seq_ptr->getTrack(0);
         kickTrack.name = "Kick";
+        kickTrack.mixerChannelIndex = 1; // Explicitly assign to channel 1
         for (int m = 0; m < numMeasures; ++m) {
             kickTrack.addEvent(getInstrument(kickId), m * spm + 0);  // Début de chaque mesure
             kickTrack.addEvent(getInstrument(kickId), m * spm + 8);  // Milieu de chaque mesure
         }
 
-        // Piste 2: Caisse Claire
+        // Piste 2: Caisse Claire (assignée au canal 2 du mixeur par défaut)
         AdikTrack& snareTrack = seq_ptr->getTrack(1);
         snareTrack.name = "Snare";
+        snareTrack.mixerChannelIndex = 2; // Explicitly assign to channel 2
         for (int m = 0; m < numMeasures; ++m) {
             snareTrack.addEvent(getInstrument(snareId), m * spm + 4);  // 5ème pas de chaque mesure
             snareTrack.addEvent(getInstrument(snareId), m * spm + 12); // 13ème pas de chaque mesure
         }
 
-        // Piste 3: Charley Fermé (sur tous les pas de chaque mesure)
+        // Piste 3: Charley Fermé (assignée au canal 3 du mixeur par défaut)
         AdikTrack& hihatClosedTrack = seq_ptr->getTrack(2);
         hihatClosedTrack.name = "Hi-Hat Fermé";
+        hihatClosedTrack.mixerChannelIndex = 3; // Explicitly assign to channel 3
         for (int m = 0; m < numMeasures; ++m) {
             for (int i = 0; i < spm; ++i) {
                 hihatClosedTrack.addEvent(getInstrument(hihatClosedId), m * spm + i, 0.7f);
@@ -296,9 +367,10 @@ public:
         }
         hihatClosedTrack.volume = 0.8f;
 
-        // Piste 4: Son additionnel (dernier pas de chaque mesure)
+        // Piste 4: Son additionnel (assignée au canal 4 du mixeur par défaut)
         AdikTrack& additionalTrack = seq_ptr->getTrack(3);
         additionalTrack.name = "Additional Sound";
+        additionalTrack.mixerChannelIndex = 4; // Explicitly assign to channel 4
         for (int m = 0; m < numMeasures; ++m) {
             additionalTrack.addEvent(getInstrument(additionalId), m * spm + (spm - 1), 0.9f);
         }
@@ -430,30 +502,58 @@ public:
             return;
         }
 
-        std::vector<std::pair<AdikEvent*, float>> eventsToPlay = currentPlayingSequence->getAllEventsAtStep(currentStepInSequence);
-
         // Calculer la mesure et le pas local pour l'affichage
         int currentMeasure = currentStepInSequence / currentPlayingSequence->stepsPerMeasure;
         int stepInMeasure = currentStepInSequence % currentPlayingSequence->stepsPerMeasure;
 
-        std::cout << "\nMode: " << (currentMode == SEQUENCE_MODE ? "SEQUENCE" : "SONG")
-                  << "\n| Séquence: " << currentPlayingSequence->name
+        std::cout << "Mode: " << (currentMode == SEQUENCE_MODE ? "SEQUENCE" : "SONG")
+                  << " | Séquence: " << currentPlayingSequence->name
                   << " | Mesure: " << currentMeasure + 1 // Affichage humain (1-indexé)
-                  << "\n| Pas: " << stepInMeasure << " (Abs: " << currentStepInSequence << ")"
-                  << "\n| Événements: ";
-        if (eventsToPlay.empty()) {
-            std::cout << "Rien.";
-        } else {
-            for (const auto& pair : eventsToPlay) {
-                AdikEvent* event = pair.first;
-                float finalVelocity = pair.second;
+                  << " | Pas: " << stepInMeasure << " (Abs: " << currentStepInSequence << ")"
+                  << " | Événements: ";
+        
+        bool hasPlayedSound = false;
+        bool hasSoloedTrack = false;
+        // Vérifier s'il y a au moins une piste en solo dans la séquence actuelle
+        for (const auto& track : currentPlayingSequence->tracks) {
+            if (track.isSoloed) {
+                hasSoloedTrack = true;
+                break;
+            }
+        }
+
+        // Nettoyer les canaux du mixeur au début de chaque pas pour une représentation visuelle précise
+        mixer.clearAllChannels();
+
+        // Parcourir toutes les pistes de la séquence actuellement jouée
+        for (auto& track : currentPlayingSequence->tracks) {
+            // Ignorer la piste si elle est mutée ou si une piste est solo et celle-ci ne l'est pas
+            if (track.isMuted || (hasSoloedTrack && !track.isSoloed)) {
+                continue;
+            }
+
+            // Récupérer les événements de cette piste pour le pas actuel
+            std::vector<AdikEvent*> trackEvents = track.getEventsAtStep(currentStepInSequence);
+            for (AdikEvent* event : trackEvents) {
                 if (event->instrument) {
-                    event->instrument->play(finalVelocity, event->pan, event->pitch);
-                    std::cout << "; ";
+                    // Calculer la vélocité finale en multipliant la vélocité de l'événement par le volume de la piste
+                    float finalVelocity = event->velocity * track.volume;
+                    
+                    // Router le son vers le mixeur sur le canal assigné à cette piste
+                    mixer.routeSound(track.mixerChannelIndex, event->instrument, finalVelocity, event->pan, event->pitch);
+                    hasPlayedSound = true;
                 }
             }
         }
+
+        if (!hasPlayedSound) {
+            std::cout << "Rien.";
+        }
         std::cout << std::endl;
+
+        // Afficher l'état du mixeur après avoir routé tous les événements pour le pas actuel
+        mixer.displayMixerStatus();
+        std::cout << std::endl; // Ajouter une ligne vide pour une meilleure lisibilité
 
         // Avancer le pas
         currentStepInSequence++;
@@ -479,8 +579,101 @@ public:
             // std::this_thread::sleep_for(std::chrono::milliseconds(millisecondsPerStep));
         }
         stop();
-        std::cout << "----------------------------------------\n";
     }
 };
+/*
+// --- Exemple d'utilisation dans main.cpp ---
+int main() {
+    AdikPlayer player;
 
-       
+    // --- DÉMONSTRATION DU MODE SÉQUENCE ---
+    std::cout << "========== MODE SÉQUENCE ==========" << std::endl;
+    player.setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+
+    // Jouer la première séquence (index 0) du Player, qui a 2 mesures (32 pas au total)
+    player.selectSequenceInPlayer(0); // "Intro Groove (2 Mesures)"
+    std::cout << "\n--- Simulation de la Séquence 'Intro Groove' (Player Index 0, 2 mesures) ---" << std::endl;
+    player.simulatePlayback(player.sequenceList[0]->lengthInSteps); 
+
+    // Modifier la séquence actuelle (Piste 3, Charley Fermé) et rejouer
+    std::cout << "\n--- Réduction du volume du Charley Fermé sur Séquence 0 du Player et relecture ---" << std::endl;
+    player.sequenceList[0]->getTrack(2).volume = 0.2f; // Modification via shared_ptr
+    player.simulatePlayback(player.sequenceList[0]->lengthInSteps);
+
+    // Sélectionner et jouer la deuxième séquence (index 1) du Player, qui a 1 mesure (16 pas au total)
+    std::cout << "\n--- Simulation de la Séquence 'Chorus Beat' (Player Index 1, 1 mesure) ---" << std::endl;
+    player.selectSequenceInPlayer(1); // "Chorus Beat (1 Mesure)"
+    player.simulatePlayback(player.sequenceList[1]->lengthInSteps); 
+
+    // --- DÉMONSTRATION DU MODE SONG ---
+    std::cout << "\n\n========== MODE SONG ==========" << std::endl;
+    player.setPlaybackMode(AdikPlayer::SONG_MODE);
+
+    // Créer un nouveau morceau
+    player.clearCurrentSong();
+    player.currentSong->name = "Mon Morceau Final (Demo Shared Ptr)";
+
+    // Construire le morceau à partir des séquences du Player
+    // Sequence 0: 2 mesures (32 pas)
+    // Sequence 1: 1 mesure (16 pas)
+    player.addSequenceFromPlayerToSong(0);     // Ajoute "Intro Groove (2 Mesures)" (1 fois par défaut)
+    player.addSequenceFromPlayerToSong(1, 2);  // Ajoute "Chorus Beat (1 Mesure)" 2 fois
+    player.addSequenceFromPlayerToSong(0);     // Ajoute "Intro Groove (2 Mesures)" à nouveau
+
+    // Aperçu des séquences dans le morceau
+    std::cout << "\nSéquences dans le morceau '" << player.currentSong->name << "':" << std::endl;
+    for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
+        std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name 
+                  << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+    }
+    // Notez que la séquence "Intro Groove" (index 0 et 3) pointe vers la même adresse mémoire,
+    // montrant qu'il s'agit du même objet partagé.
+
+    // Calculer la longueur totale du morceau pour la simulation
+    int totalSongSteps = 0;
+    if (player.currentSong) {
+        for (const auto& seq_ptr : player.currentSong->sequences) {
+            totalSongSteps += seq_ptr->lengthInSteps;
+        }
+    }
+
+    std::cout << "\n--- Lecture du Morceau '" << player.currentSong->name << "' (Total " << totalSongSteps << " pas) ---" << std::endl;
+    player.simulatePlayback(totalSongSteps); // Joue le morceau complet
+
+    // Rejouer le morceau pour montrer le bouclage
+    std::cout << "\n--- Relecture du Morceau (bouclage) ---" << std::endl;
+    player.simulatePlayback(totalSongSteps + player.currentSong->sequences[0]->lengthInSteps); // Joue plus que le total pour voir le bouclage
+
+    // Exemple: Muter une piste spécifique DANS la première séquence du morceau (affecte la copie dans le song, pas l'originale du player)
+    // Ici, puisque les séquences sont partagées, muter la piste de la première séquence du song affectera aussi la dernière séquence du song
+    // car elles pointent vers le même objet AdikSequence.
+    std::cout << "\n--- Mute de la caisse claire dans la PREMIERE séquence du morceau et relecture de TOUT le morceau ---" << std::endl;
+    if (!player.currentSong->sequences.empty()) {
+        std::cout << "Muting snare track on sequence '" << player.currentSong->sequences[0]->name << "' (shared_ptr address: " << player.currentSong->sequences[0].get() << ")" << std::endl;
+        player.currentSong->sequences[0]->getTrack(1).isMuted = true; // Mute la piste de Snare de la première séquence du morceau
+    }
+    player.simulatePlayback(totalSongSteps); // Relecture complète du morceau
+
+    std::cout << "\n--- Suppression de la séquence à l'index 1 du morceau ---" << std::endl;
+    player.deleteSequenceFromCurrentSong(1); // Supprime la deuxième séquence (Chorus Beat)
+
+    std::cout << "\nSéquences restantes dans le morceau '" << player.currentSong->name << "':" << std::endl;
+    for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
+        std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name 
+                  << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+    }
+
+    std::cout << "\n--- Relecture du morceau après suppression ---" << std::endl;
+    totalSongSteps = 0; // Recalculer la longueur totale après suppression
+    if (player.currentSong) {
+        for (const auto& seq_ptr : player.currentSong->sequences) {
+            totalSongSteps += seq_ptr->lengthInSteps;
+        }
+    }
+    player.simulatePlayback(totalSongSteps);
+
+
+    return 0;
+}
+*/
+
