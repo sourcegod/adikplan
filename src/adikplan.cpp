@@ -8,68 +8,126 @@
  * ***/
 
 #include "adikplan.h"
+// #include "AdikTransport.h" // Inclure la nouvelle classe AdikTransport
+
+#include <iostream>
+#include <string>
+#include <memory>
+#include <vector>
 
 int main() {
-    AdikPlayer player;
+    // Créer une instance de AdikPlayer (qui sera gérée par shared_ptr)
+    std::shared_ptr<AdikPlayer> player = std::make_shared<AdikPlayer>();
+
+    // Créer une instance de AdikTransport en lui passant le player
+    AdikTransport transport(player);
 
     // --- DÉMONSTRATION DU MODE SÉQUENCE EN TEMPS RÉEL (SIMULÉ) ---
-    std::cout << "========== MODE SÉQUENCE (TEMPS RÉEL SIMULÉ) ==========" << std::endl;
-    player.setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+    std::cout << "\n========== MODE SÉQUENCE (TEMPS RÉEL SIMULÉ) ==========" << std::endl;
+    player->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
 
-    player.selectSequenceInPlayer(0); // "Intro Groove (2 Mesures)"
+    player->selectSequenceInPlayer(0); // "Intro Groove (2 Mesures)"
+    transport.printInfo();
     std::cout << "\n--- Simulation en temps réel de la Séquence 'Intro Groove' (Player Index 0) ---" << std::endl;
-    // Jouons pendant 5 secondes pour voir plusieurs boucles si la séquence est courte
-    player.simulateRealtimePlayback(5);
+    transport.play();
+    player->simulateRealtimePlayback(5); // Jouons pendant 5 secondes pour voir plusieurs boucles si la séquence est courte
+    transport.stop();
+    transport.printInfo();
 
     std::cout << "\n--- Réduction du volume du Charley Fermé sur Séquence 0 du Player et relecture en temps réel ---" << std::endl;
-    player.sequenceList[0]->getTrack(2).volume = 0.2f;
-    player.simulateRealtimePlayback(5);
+    player->sequenceList[0]->getTrack(2).volume = 0.2f;
+    transport.play();
+    player->simulateRealtimePlayback(5);
+    transport.stop();
 
-    player.selectSequenceInPlayer(1); // "Chorus Beat (1 Mesure)"
+    player->selectSequenceInPlayer(1); // "Chorus Beat (1 Mesure)"
+    transport.printInfo();
     std::cout << "\n--- Simulation en temps réel de la Séquence 'Chorus Beat' (Player Index 1) ---" << std::endl;
-    player.simulateRealtimePlayback(3); // Jouons 3 secondes
+    transport.play();
+    player->simulateRealtimePlayback(3); // Jouons 3 secondes
+    transport.stop();
 
-    // --- DÉMONSTRATION DU MODE SONG EN TEMPS RÉEL (SIMULÉ) ---
-    std::cout << "\n\n========== MODE SONG (TEMPS RÉEL SIMULÉ) ==========" << std::endl;
-    player.setPlaybackMode(AdikPlayer::SONG_MODE);
 
-    player.clearCurrentSong();
-    player.currentSong->name = "Mon Morceau Final (Demo Temps Reel)";
+    // --- DÉMONSTRATION DES NOUVELLES FONCTIONS DE TRANSPORT ---
+    std::cout << "\n\n========== DÉMONSTRATION DES FONCTIONS DE TRANSPORT ==========" << std::endl;
+    player->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+    player->selectSequenceInPlayer(0); // On revient sur la séquence 0 (Intro Groove)
 
-    player.addSequenceFromPlayerToSong(0);
-    player.addSequenceFromPlayerToSong(1, 2);
-    player.addSequenceFromPlayerToSong(0);
+    std::cout << "\n--- Test de Pause ---" << std::endl;
+    transport.play();
+    player->simulateRealtimePlayback(2); // Joue pendant 2 secondes
+    transport.pause();
+    transport.printInfo();
+    player->simulateRealtimePlayback(1); // Ne devrait rien jouer
+    transport.play(); // Reprendre la lecture
+    player->simulateRealtimePlayback(2);
+    transport.stop();
+    transport.printInfo();
 
-    std::cout << "\nSéquences dans le morceau '" << player.currentSong->name << "':" << std::endl;
-    for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
-        std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name
-                  << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+    std::cout << "\n--- Test de setPosition ---" << std::endl;
+    transport.setPosition(8); // Déplacer au 9ème pas (index 8)
+    transport.printInfo();
+    transport.play();
+    player->simulateRealtimePlayback(3); // Jouer à partir de là
+    transport.stop();
+
+    std::cout << "\n--- Test de Rewind et Forward ---" << std::endl;
+    transport.setPosition(10);
+    transport.printInfo();
+    transport.rewind(); // Reculer de 1 pas
+    transport.printInfo();
+    transport.forward(5); // Avancer de 5 pas
+    transport.printInfo();
+    transport.play();
+    player->simulateRealtimePlayback(3);
+    transport.stop();
+
+
+    // --- DÉMONSTRATION DU MODE SONG EN TEMPS RÉEL (SIMULÉ) AVEC TRANSPORT ---
+    std::cout << "\n\n========== MODE SONG (TEMPS RÉEL SIMULÉ) AVEC TRANSPORT ==========" << std::endl;
+    player->setPlaybackMode(AdikPlayer::SONG_MODE);
+
+    player->clearCurrentSong();
+    player->currentSong->name = "Mon Morceau Final (Demo Temps Reel)";
+
+    player->addSequenceFromPlayerToSong(0); // Intro Groove
+    player->addSequenceFromPlayerToSong(1, 2); // Chorus Beat x2
+    player->addSequenceFromPlayerToSong(0); // Intro Groove
+
+    std::cout << "\nSéquences dans le morceau '" << player->currentSong->name << "':" << std::endl;
+    for (size_t i = 0; i < player->currentSong->sequences.size(); ++i) {
+        std::cout << "  Index " << i << ": " << player->currentSong->sequences[i]->name
+                  << " (Longueur: " << player->currentSong->sequences[i]->lengthInSteps << " pas)" << std::endl;
     }
+    transport.printInfo();
 
-    std::cout << "\n--- Lecture en temps réel simulée du Morceau '" << player.currentSong->name << "' ---" << std::endl;
-    // Jouons le morceau pendant un temps suffisant pour qu'il boucle au moins une fois
-    // Total steps: 32 (seq0) + 16 (seq1) + 16 (seq1) + 32 (seq0) = 96 steps
-    // Samples per step = 44100 * 60 / 120 / 4 = 5512.5 samples/step
-    // Total samples for song: 96 * 5512.5 = 529200 samples
-    // Total time for song: 529200 / 44100 = 12 seconds
-    player.simulateRealtimePlayback(15); // Joue pendant 15 secondes pour voir le bouclage
+    std::cout << "\n--- Lecture en temps réel simulée du Morceau '" << player->currentSong->name << "' ---" << std::endl;
+    transport.play();
+    player->simulateRealtimePlayback(15); // Joue pendant 15 secondes pour voir le bouclage
+    transport.stop();
+    transport.printInfo();
 
     std::cout << "\n--- Mute de la caisse claire dans la PREMIERE séquence du morceau et relecture en temps réel ---" << std::endl;
-    if (!player.currentSong->sequences.empty()) {
-        std::cout << "Muting snare track on sequence '" << player.currentSong->sequences[0]->name << "' (shared_ptr address: " << player.currentSong->sequences[0].get() << ")" << std::endl;
-        player.currentSong->sequences[0]->getTrack(1).isMuted = true;
+    if (!player->currentSong->sequences.empty()) {
+        player->currentSong->sequences[0]->getTrack(1).isMuted = true;
+        std::cout << "Muting snare track on sequence '" << player->currentSong->sequences[0]->name << "'" << std::endl;
     }
-    player.simulateRealtimePlayback(10); // Relecture pendant 10 secondes
+    transport.play();
+    player->simulateRealtimePlayback(10); // Relecture pendant 10 secondes
+    transport.stop();
 
     std::cout << "\n--- Suppression de la séquence à l'index 1 du morceau et relecture en temps réel ---" << std::endl;
-    player.deleteSequenceFromCurrentSong(1);
-
-    std::cout << "\nSéquences restantes dans le morceau '" << player.currentSong->name << "':" << std::endl;
-    for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
-        std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name
-                   << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+    player->deleteSequenceFromCurrentSong(1);
+    transport.printInfo(); // Afficher l'état après suppression
+    std::cout << "\nSéquences restantes dans le morceau '" << player->currentSong->name << "':" << std::endl;
+    for (size_t i = 0; i < player->currentSong->sequences.size(); ++i) {
+        std::cout << "  Index " << i << ": " << player->currentSong->sequences[i]->name
+                  << " (Addr: " << player->currentSong->sequences[i].get() << ")" << std::endl;
     }
-    player.simulateRealtimePlayback(10); // Relecture après suppression
+    transport.play();
+    player->simulateRealtimePlayback(10); // Relecture après suppression
+    transport.stop();
 
     return 0;
 }
+
