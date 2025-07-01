@@ -13,9 +13,8 @@
 #include "adiktrack.h"
 #include "adikchannel.h"
 #include "adikmixer.h"
-
-class AdikSequence;
-class AdikSong;
+#include "adiksequence.h"
+#include "adiksong.h"
 
 
 // --- AdikPlayer.h ---
