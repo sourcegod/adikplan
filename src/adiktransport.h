@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <iostream>
+#include <iomanip> // pour setprecision
 
 
 // --- adiktransport.h ---
