@@ -1,50 +1,39 @@
-#include <string>
-#include <vector>
-#include <map>
-#include <memory>    // Pour std::shared_ptr, std::make_shared
-#include <iostream>  // Pour les affichages de démonstration
-#include <stdexcept> // Pour std::out_of_range, std::runtime_error
-#include <cmath>     // Pour sin, PI
-#include <numeric>   // Pour std::iota
+// adikplan.h
+#pragma once
 
+#include <vector>
+#include <string>
+#include <cmath>
+#include <memory>
+#include <numeric> // For std::iota
+#include <iostream>
+#include <map>
+// --- Constants (peuvent être déplacées dans un fichier de configuration global si nécessaire) ---
+const float PI = 3.14159265358979323846f;
+const float MAX_AMPLITUDE = 0.8f; // Pour éviter la saturation lors de la génération de son simple
+const int DEFAULT_SAMPLE_RATE = 44100; // Taux d'échantillonnage par défaut pour la génération de son
+                                       //
 // --- Déclarations anticipées ---
 class AdikMixer;
 class AdikChannel;
 
-// --- Constants ---
-const float PI = 3.14159265358979323846f;
-const float MAX_AMPLITUDE = 0.8f; // Pour éviter la saturation lors de la génération de son simple
 
-// --- AdikInstrument.h ---
-// Représente la définition d'un son de batterie (Kick, Snare, Hi-Hat, etc.)
-// C'est une ressource globale unique pour chaque son.
-class AdikInstrument {
+class AdikSound {
 public:
-    std::string id;             // ID unique de l'instrument (ex: "kick_standard")
-    std::string name;           // Nom affichable (ex: "Grosse Caisse Standard")
-    std::string audioFilePath;  // Chemin vers le fichier audio de l'échantillon
-    float defaultVolume;        // Volume par défaut (0.0 à 1.0)
-    float defaultPan;           // Panoramique par défaut (-1.0 à 1.0)
-    float defaultPitch;         // Pitch par défaut (ex: 0.0 pour l'original)
-    // Ajoutez d'autres propriétés spécifiques à l'instrument (enveloppe ADSR, effets, etc.)
-
-    // Ajout d'un buffer audio simulé pour cet instrument
     std::vector<float> audioData;
-    int currentSamplePosition; // Pour la lecture
+    int currentSamplePosition; // Pour la lecture au sein de ce buffer de son
 
-    AdikInstrument(const std::string& id, const std::string& name, const std::string& path)
-        : id(id), name(name), audioFilePath(path), defaultVolume(1.0f), defaultPan(0.0f), defaultPitch(0.0f), currentSamplePosition(0) {
-        // Initialisation simple du son pour la démo: une impulsion courte ou une onde
-        // Dans une vraie app, on chargerait le fichier audio.
-        // Ici, on simule une petite impulsion pour le "kick" et un bruit pour les "snares" et "hihats"
-        audioData.resize(4410); // 100ms de son à 44.1kHz (44100 samples/sec)
+    // Constructeur : Génère les données audio en fonction du type de son
+    AdikSound(const std::string& soundType) : currentSamplePosition(0) {
+        // La taille du son est fixée à 100 ms pour l'exemple
+        audioData.resize(static_cast<size_t>(DEFAULT_SAMPLE_RATE * 0.1)); // 100ms de son à 44.1kHz
 
-        if (id.find("kick") != std::string::npos) {
+        if (soundType == "kick") {
             // Impulsion pour kick
             for (int i = 0; i < audioData.size(); ++i) {
-                audioData[i] = MAX_AMPLITUDE * std::exp(-(float)i / (audioData.size() * 0.1f)) * std::sin(2.0f * PI * 50.0f * i / 44100.0f);
+                audioData[i] = MAX_AMPLITUDE * std::exp(-(float)i / (audioData.size() * 0.1f)) * std::sin(2.0f * PI * 50.0f * i / DEFAULT_SAMPLE_RATE);
             }
-        } else if (id.find("snare") != std::string::npos || id.find("hihat") != std::string::npos || id.find("clap") != std::string::npos) {
+        } else if (soundType == "snare" || soundType == "hihat" || soundType == "clap") {
             // Bruit blanc ou transitoire court pour snare/hihat
             for (int i = 0; i < audioData.size(); ++i) {
                 audioData[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.5f * MAX_AMPLITUDE * std::exp(-(float)i / (audioData.size() * 0.05f));
@@ -52,35 +41,74 @@ public:
         } else {
             // Onde sinusoïdale par défaut pour les autres
             for (int i = 0; i < audioData.size(); ++i) {
-                audioData[i] = MAX_AMPLITUDE * std::sin(2.0f * PI * 220.0f * i / 44100.0f);
+                audioData[i] = MAX_AMPLITUDE * std::sin(2.0f * PI * 220.0f * i / DEFAULT_SAMPLE_RATE);
             }
         }
     }
 
-    // Méthode pour "jouer" le son de l'instrument, elle est maintenant privée
-    // et sera appelée par le mixer lors du rendu audio
-    // Elle remplit un buffer avec des échantillons de cet instrument.
-    void render(float* buffer, int numSamples, float finalVelocity, float finalPan, float finalPitch) {
-        // Pour une vraie implémentation, finalPitch affecterait le taux de lecture de l'échantillon.
-        // Ici, nous ignorons finalPitch pour simplifier.
+    // Lit les données de l'AdikSound et les ajoute au buffer de sortie
+    // Cette fonction était auparavant AdikInstrument::render
+    void readData(float* outputBuffer, int numSamples, float finalVelocity, float finalPan, float finalPitch) {
+        // finalPitch est ignoré pour la démo, il affecterait le taux de lecture
+        // finalPan est ignoré pour la démo mono, il affecterait les canaux L/R en stéréo
 
         for (int i = 0; i < numSamples; ++i) {
             if (currentSamplePosition < audioData.size()) {
                 float sample = audioData[currentSamplePosition];
-                // Appliquer vélocité et panoramique (simple, pour démo mono)
-                // Pour stéréo, il faudrait buffer[i*2] et buffer[i*2+1] et des calculs L/R
-                buffer[i] += sample * finalVelocity; // Additionne l'échantillon au buffer de sortie
+                outputBuffer[i] += sample * finalVelocity; // Additionne l'échantillon au buffer de sortie
                 currentSamplePosition++;
             } else {
-                // L'échantillon est terminé, réinitialiser ou laisser à 0
+                // L'échantillon est terminé, nous avons lu tout ce que nous pouvions pour ce AdikSound.
+                // Le reste du buffer pour cet instrument restera à 0 pour ce tour de rendu.
                 break;
             }
         }
     }
 
-    // Réinitialise la position de lecture de l'instrument
+    // Réinitialise la position de lecture du son
     void resetPlayback() {
         currentSamplePosition = 0;
+    }
+};
+
+/// adikinstrument.h --- ///
+// Représente la définition d'un son de batterie (Kick, Snare, Hi-Hat, etc.)
+// C'est une ressource globale unique pour chaque son.
+class AdikInstrument {
+public:
+    std::string id;             // ID unique de l'instrument (ex: "kick_standard")
+    std::string name;           // Nom affichable (ex: "Grosse Caisse Standard")
+    std::string audioFilePath;  // Chemin vers le fichier audio de l'échantillon (toujours utile pour une vraie implémentation)
+    float defaultVolume;        // Volume par défaut (0.0 à 1.0)
+    float defaultPan;           // Panoramique par défaut (-1.0 à 1.0)
+    float defaultPitch;         // Pitch par défaut (ex: 0.0 pour l'original)
+
+    // *** MODIFICATION MAJEURE ***
+    // 3. Dans la classe AdikInstrument, nous allons ajouter une variable sound du type AdikSound
+    AdikSound sound; // L'instance de AdikSound pour cet instrument
+
+    AdikInstrument(const std::string& id, const std::string& name, const std::string& path)
+        : id(id), name(name), audioFilePath(path), defaultVolume(1.0f), defaultPan(0.0f), defaultPitch(0.0f),
+          // Initialisation de AdikSound en fonction de l'ID de l'instrument pour la génération du son
+          sound(id.find("kick") != std::string::npos ? "kick" :
+                (id.find("snare") != std::string::npos ? "snare" :
+                 (id.find("hihat") != std::string::npos ? "hihat" :
+                  (id.find("clap") != std::string::npos ? "clap" : "default"))))
+    {
+        // Le corps du constructeur peut maintenant être plus simple,
+        // la logique de génération des données audio est dans AdikSound.
+    }
+
+    // Ancienne fonction AdikInstrument::render est remplacée par un appel à AdikSound::readData
+    // Cette fonction sera appelée par le mixer lors du rendu audio
+    void render(float* buffer, int numSamples, float finalVelocity, float finalPan, float finalPitch) {
+        // Appelle la méthode readData de l'objet AdikSound interne
+        sound.readData(buffer, numSamples, finalVelocity, finalPan, finalPitch);
+    }
+
+    // Réinitialise la position de lecture de l'instrument (en fait, du AdikSound interne)
+    void resetPlayback() {
+        sound.resetPlayback();
     }
 };
 
@@ -212,7 +240,7 @@ public:
             if (channel.isActive) {
                 channel.renderToBuffer(outputBuffer, numSamples);
                 // Si l'instrument a fini de jouer, désactiver le canal
-                if (channel.currentInstrument && channel.currentInstrument->currentSamplePosition >= channel.currentInstrument->audioData.size()) {
+                if (channel.currentInstrument && channel.currentInstrument->sound.currentSamplePosition >= channel.currentInstrument->sound.audioData.size()) {
                     channel.clear();
                 }
             }
@@ -699,6 +727,7 @@ public:
         stop();
     }
 };
+
 /*
 // --- main.cpp ---
 int main() {

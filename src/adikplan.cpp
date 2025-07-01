@@ -67,7 +67,7 @@ int main() {
     std::cout << "\nSéquences restantes dans le morceau '" << player.currentSong->name << "':" << std::endl;
     for (size_t i = 0; i < player.currentSong->sequences.size(); ++i) {
         std::cout << "  Index " << i << ": " << player.currentSong->sequences[i]->name
-                  << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
+                   << " (Addr: " << player.currentSong->sequences[i].get() << ")" << std::endl;
     }
     player.simulateRealtimePlayback(10); // Relecture après suppression
 
