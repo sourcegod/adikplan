@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <numeric> // Pour std::iota
+#include <cmath>
 #include <algorithm> // Pour std::fill
 
 // Constantes pour la simulation

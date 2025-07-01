@@ -50,7 +50,7 @@ class AdikPlayer;
 class AdikTransport; // Nouvelle classe à déclarer ici
 
 static void processAudioCallback(float* outputBuffer, int numSamples, void* userData);
-
+/*
 class AdikSound {
 public:
     std::vector<float> audioData;
@@ -144,6 +144,7 @@ public:
         sound.resetPlayback();
     }
 };
+*/
 
 // --- AdikEvent.h ---
 // Représente un événement unique (un "hit" sur un instrument)
@@ -160,6 +161,7 @@ public:
         : instrument(instr), step(s), velocity(vel), pan(p), pitch(pi) {}
 };
 
+/*
 // --- AdikChannel.h ---
 // Représente un canal individuel sur le mixeur.
 // Il simule la réception et l'affichage des informations d'un son en cours de lecture.
@@ -288,6 +290,7 @@ public:
         }
     }
 };
+*/
 
 
 // --- AdikTrack.h ---
@@ -354,7 +357,8 @@ public:
         throw std::out_of_range("Indice de piste hors limites.");
     }
 };
-//
+
+
 // --- AdikSong.h ---
 // Représente un morceau, composé d'un enchaînement de séquences.
 class AdikSong {

@@ -7,13 +7,15 @@
 #include <memory>
 #include <map>
 #include <iostream>
+#include "adiksound.h"
+#include "adikinstrument.h"
+#include "adikevent.h"
+#include "adiktrack.h"
+#include "adikchannel.h"
+#include "adikmixer.h"
 
-class AdikInstrument;
-class AdikEvent;
-class AdikTrack;
 class AdikSequence;
 class AdikSong;
-class AdikMixer;
 
 
 // --- AdikPlayer.h ---
