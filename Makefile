@@ -9,6 +9,7 @@ CXX = g++
 # -Wextra: Active des avertissements supplémentaires
 # -std=c++17: Utilise le standard C++17
 CXXFLAGS = -Wall -pedantic -Wextra -std=c++17
+LDFLAGS = -lrtaudio -lasound -lpthread
 
 # Répertoire des fichiers sources (.cpp, .h)
 SRCS_DIR = src

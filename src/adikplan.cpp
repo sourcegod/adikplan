@@ -8,15 +8,71 @@
  * ***/
 
 #include "adikplan.h"
+#include "rtaudio_driver.h" // Incluez votre nouveau driver RtAudio
 #include "audioengine.h"
 #include "adikplayer.h"
 #include "adiktransport.h" // Inclure la nouvelle classe AdikTransport
-
 #include <iostream>
 #include <string>
 #include <memory>
 #include <vector>
+#include <thread>
+#include <chrono>
 
+int main() {
+    std::cout << "Démarrage de la simulation AdikDrumMachine avec RtAudio." << std::endl;
+
+    // Ordre d'inclusion des .h pour les définitions complètes dans une application réelle
+    // Si vous utilisez un seul adikplan.h, assurez-vous de l'ordre interne.
+    // #include "adiksound.h"
+    // #include "adikinstrument.h"
+    // #include "adikevent.h"
+    // #include "adiktrack.h"
+    // #include "adiksequence.h"
+    // #include "adiksong.h"
+    // #include "adikchannel.h"
+    // #include "adikmixer.h"
+    // #include "adikplayer.h" // Si AdikPlayer est dans son propre .h, il doit inclure toutes ses dépendances
+
+    // Créer une instance de AdikPlayer
+    AdikPlayer player;
+
+    // Configurer les paramètres audio
+    unsigned int sampleRate = 44100;
+    unsigned int bufferSize = 512; // Taille du buffer à passer à RtAudio
+
+    // Mettre à jour le player avec les paramètres audio réels
+    player.sampleRate = sampleRate;
+    player.bufferSizeSamples = bufferSize; // Important pour que player.calculateTimingParameters() soit correct
+    player.calculateTimingParameters();
+
+    // Créer l'instance du driver RtAudio
+    RtAudioDriver audioDriver;
+
+    // Démarrer le flux audio, en passant l'instance de 'player' comme userData
+    if (audioDriver.startStream(sampleRate, bufferSize, &player)) {
+        player.setPlaybackMode(AdikPlayer::SEQUENCE_MODE); // Ou SONG_MODE
+        player.selectSequenceInPlayer(0); // Sélectionner la première séquence de démo
+
+        player.start(); // Démarrer la lecture logique du player
+
+        // Garder le programme en cours d'exécution pendant un certain temps pour la lecture audio
+        std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
+        std::cin.get(); // Attend que l'utilisateur appuie sur Entrée
+
+        player.stop(); // Arrêter la lecture logique du player
+
+        // Arrêter et fermer le flux audio
+        audioDriver.closeStream();
+    } else {
+        std::cerr << "Échec du démarrage du moteur audio. Impossible de lire." << std::endl;
+    }
+
+    std::cout << "Simulation terminée." << std::endl;
+    return 0;
+}
+
+/*
 int main() {
     // Créer une instance de AdikPlayer (qui sera gérée par shared_ptr)
     std::shared_ptr<AdikPlayer> player = std::make_shared<AdikPlayer>();
@@ -132,4 +188,5 @@ int main() {
 
     return 0;
 }
+*/
 

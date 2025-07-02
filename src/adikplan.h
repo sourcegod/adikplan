@@ -1,7 +1,6 @@
 #ifndef ADIKPLAN_H
 #define ADIKPLAN_H
 
-// adikplan.h
 #pragma once
 
 /*
@@ -17,6 +16,7 @@
 #include "AdikPlayer.h"
 // #include "adiktransport.h"
 */
+
 #include "adikplayer.h"
 
 /*
