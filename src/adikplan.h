@@ -19,5 +19,19 @@
 */
 #include "adikplayer.h"
 
+/*
+// Hiérarchie des classes
+- AdikSound
+- AdikInstrument
+- AdikEvent
+- AdikChannel
+- AdikMixer
+- AdikTrack
+- AdikSequence
+- AdikSong
+- AudioEngine
+- AdikPlayer
+- adiktransport
+*/
 
 #endif // ADIKPLAN_H
