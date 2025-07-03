@@ -83,6 +83,17 @@ public:
         populateDemoSequence(sequenceList[1], "Chorus Beat (1 Mesure)", "kick_1", "snare_1", "hihat_closed_1", "clap_1", 1, 16);
     }
 
+    /*
+    void initParams(size_t sampleRate=44100, size_t numChannels=2, size_t bitDepth=16, size_t bufferSize=512) {
+        sampleRate_ = sampleRate;
+        numChannels_ = numchannels;
+        bitDepth_ = bitDepth;
+        bufferSize_ = bufferSize;
+    
+    }
+    */
+
+
     // Calculer les paramètres de timing basés sur le tempo et le sample rate
     void calculateTimingParameters() {
         // 60 secondes/minute * sampleRate (samples/seconde) / tempoBPM (battements/minute) = samples/battement
@@ -313,8 +324,8 @@ public:
 
     // Simuler le processus de lecture audio en temps réel
     void simulateRealtimePlayback(int numSecondsToSimulate) {
-      // Deprecated function, used when there is no Realtime Audio Library  
-      start();
+        // Deprecated function, used when there is no Realtime Audio Library  
+        start();
         int totalSamplesToSimulate = numSecondsToSimulate * sampleRate;
         std::vector<float> audioOutputBuffer(bufferSizeSamples); // Buffer pour la sortie audio
 
