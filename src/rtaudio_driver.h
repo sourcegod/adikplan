@@ -10,7 +10,7 @@
 // Forward declaration pour la fonction de callback globale.
 // Cette fonction sera implémentée dans un .cpp séparé (e.g., audioengine.cpp)
 // et sera passée à RtAudio.
-extern void processAudioCallback(float* outputBuffer, int numSamples, void* userData);
+extern void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* userData);
 
 /*
  * @brief Une classe utilitaire pour initialiser et gérer RtAudio.

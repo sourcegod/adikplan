@@ -6,8 +6,10 @@
 // Cette fonction a la signature exacte que RtAudio attend.
 // Elle est déclarée static ici pour limiter sa visibilité à ce fichier .cpp.
 extern "C" { // Assure la liaison C pour la fonction de rappel
-    static int rtAudioCallbackWrapper(void *outputBuffer, void *inputBuffer, unsigned int nFrames,
-                                      double streamTime, RtAudioStreamStatus status, void *userData) {
+    static int rtAudioCallbackWrapper(void *outputBuffer, void *inputBuffer, 
+                                      unsigned int nFrames,
+                                      double streamTime, RtAudioStreamStatus status, 
+                                      void *userData) {
         // Gérer les erreurs de statut du flux si nécessaire
         if (status) {
             std::cerr << "RtAudio callback status message: " << status << std::endl;

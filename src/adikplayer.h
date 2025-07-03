@@ -1,6 +1,6 @@
 #ifndef ADIKPLAYER_H
 #define ADIKPLAYER_H
-
+#include "audioinfo.h" // Inclure la nouvelle structure AudioInfo
 #include "adikplan.h"
 #include "adiksound.h"
 #include "adikinstrument.h"
@@ -40,10 +40,10 @@ public:
     AdikMixer mixer; // L'instance du mixeur gérée par le Player
 
     int tempoBPM;                       // Tempo global en BPM
-    int sampleRate;                     // Taux d'échantillonnage (samples/seconde)
-    int bufferSizeSamples;              // Taille du buffer audio en samples
-    double samplesPerBeat;              // Nombre de samples par battement (quart de note)
-    double samplesPerStep;              // Nombre de samples par pas du séquenceur
+    unsigned int sampleRate;                     // Taux d'échantillonnage (samples/seconde)
+    unsigned int bufferSizeSamples;              // Taille du buffer audio en samples
+    unsigned int samplesPerBeat;              // Nombre de samples par battement (quart de note)
+    unsigned int samplesPerStep;              // Nombre de samples par pas du séquenceur
 
     int currentStepInSequence;          // Le pas actuel en cours de lecture dans la séquence
     long long currentSampleInStep;      // Le sample actuel dans le pas courant
@@ -83,15 +83,15 @@ public:
         populateDemoSequence(sequenceList[1], "Chorus Beat (1 Mesure)", "kick_1", "snare_1", "hihat_closed_1", "clap_1", 1, 16);
     }
 
-    /*
-    void initParams(size_t sampleRate=44100, size_t numChannels=2, size_t bitDepth=16, size_t bufferSize=512) {
-        sampleRate_ = sampleRate;
-        numChannels_ = numchannels;
-        bitDepth_ = bitDepth;
-        bufferSize_ = bufferSize;
-    
+    void initParams(const AudioInfo& audioInfo) {
+        this->sampleRate = audioInfo.sampleRate;
+        this->bufferSizeSamples = audioInfo.bufferSize;
+        // Si AdikMixer avait des paramètres audio, ils seraient passés ici
+        // mixer.initParams(audioInfo); // Exemple si AdikMixer avait aussi une telle méthode
+        calculateTimingParameters();
+        std::cout << "AdikPlayer: Paramètres audio initialisés." << std::endl;
+        audioInfo.display(); // Pour confirmation
     }
-    */
 
 
     // Calculer les paramètres de timing basés sur le tempo et le sample rate

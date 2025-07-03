@@ -81,7 +81,7 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
 // --- Nouvelle fonction de rappel audio globale et statique ---
 // 1. Rendre la fonction processAudioCallback indépendante et statique
 // Elle prend un pointeur void* userData en paramètre, qui sera casté en AdikPlayer.
-void processAudioCallback(float* outputBuffer, int numSamples, void* userData) {
+void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* userData) {
     // Caster userData en AdikPlayer*
     AdikPlayer* playerData = static_cast<AdikPlayer*>(userData);
 
