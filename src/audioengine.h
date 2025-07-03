@@ -2,6 +2,7 @@
 #define AUDIOENGINE_H
 
 #include "rtaudio_driver.h" // Incluez le driver spécifique (ici RtAudio)
+#include "audioinfo.h"      // Inclure la nouvelle structure AudioInfo
 #include <memory>           // Pour std::unique_ptr
 #include <iostream>         // Pour les messages de débogage
 
@@ -20,6 +21,7 @@ public:
 
     // Pointeur vers l'instance de AdikPlayer que le callback utilisera
     AdikPlayer* playerInstance;
+    AudioInfo audioInfo; // Stocke les paramètres audio pour référence
 
     // Constructeur
     AudioEngine() : playerInstance(nullptr) {
@@ -31,31 +33,25 @@ public:
         close(); // S'assurer que le driver est fermé quand l'AudioEngine est détruit
         std::cout << "AudioEngine: Destructeur appelé." << std::endl;
     }
-
+    
     /**
-     * @brief Initialise le moteur audio avec les paramètres spécifiés.
-     * @param sampleRate Le taux d'échantillonnage (Hz).
-     * @param bufferSize Le nombre de samples par buffer audio.
-     * @param numChannels Le nombre de canaux audio (ex: 2 pour stéréo).
-     * @param playerData Un pointeur vers l'instance de AdikPlayer à utiliser dans le callback.
+     * @brief Initialise le moteur audio avec les paramètres et l'instance du player.
+     * @param info Les paramètres audio encapsulés dans AudioInfo.
+     * @param playerData Un pointeur vers l'instance de AdikPlayer.
      * @return True si l'initialisation réussit, False sinon.
      */
-    bool init(unsigned int sampleRate, unsigned int bufferSize, unsigned int numChannels, AdikPlayer* playerData) {
-        // Stocker le pointeur vers le player
+    bool init(const AudioInfo& info, AdikPlayer* playerData) {
+        this->audioInfo = info; // Copie les paramètres dans la variable membre
         this->playerInstance = playerData;
 
-        // Créer une instance du driver RtAudio (ou tout autre driver)
-        // en utilisant un unique_ptr pour la gestion automatique de la mémoire.
+        // Créer l'instance du driver audio
         audioDriver = std::make_unique<RtAudioDriver>();
 
-        // Ici, on ne fait que stocker les paramètres, le start() les utilisera.
-        // RtAudioDriver::startStream prend ces paramètres, donc pas besoin de les stocker en membres ici.
-        // Mais vous pouvez les stocker si vous voulez y accéder plus tard.
-        // Pour l'instant, on les passera directement à startStream dans AudioEngine::start().
-
         std::cout << "AudioEngine: Initialisé avec succès." << std::endl;
+        audioInfo.display(); // Pour confirmation
         return true;
     }
+
 
     /**
      * @brief Démarre le flux audio.
@@ -63,8 +59,8 @@ public:
      * @param bufferSize Le nombre de samples par buffer (doit être le même que celui d'init).
      * @return True si le démarrage réussit, False sinon.
      */
-    bool start(unsigned int sampleRate, unsigned int bufferSize) {
-        if (!audioDriver) {
+    bool start() {
+      if (!audioDriver) {
             std::cerr << "AudioEngine: Driver audio non initialisé. Appelez init() d'abord." << std::endl;
             return false;
         }
@@ -75,7 +71,7 @@ public:
 
         std::cout << "AudioEngine: Démarrage du flux audio..." << std::endl;
         // Appelez la méthode startStream du driver RtAudio, en passant le playerInstance comme userData.
-        return audioDriver->startStream(sampleRate, bufferSize, playerInstance);
+        return audioDriver->startStream(audioInfo.sampleRate, audioInfo.bufferSize, playerInstance);
     }
 
     /**

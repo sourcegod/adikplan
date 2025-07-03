@@ -8,9 +8,11 @@
  * ***/
 
 #include "adikplan.h"
+#include "audioinfo.h"
 #include "audioengine.h"
 #include "adikplayer.h"
 #include "adiktransport.h" // Inclure la nouvelle classe AdikTransport
+
 #include <iostream>
 #include <string>
 #include <memory>
@@ -18,46 +20,39 @@
 
 
 int main() {
-    std::cout << "Démarrage de la simulation AdikDrumMachine avec AudioEngine." << std::endl;
+    std::cout << "Démarrage de la simulation AdikDrumMachine." << std::endl;
 
-    // Créer une instance de AdikPlayer
+    // 1. Définir les paramètres audio via la structure AudioInfo
+    AudioInfo globalAudioInfo(44100, 2, 32, 512); // sr=44100, ch=2, bd=32, bs=512
+    globalAudioInfo.display(); // Pour confirmation
+
+    // 2. Créer une instance de AdikPlayer
     AdikPlayer player;
+    player.initParams(globalAudioInfo); // Initialiser AdikPlayer avec AudioInfo
 
-    // Créer une instance du moteur audio
+    // 3. Créer une instance du moteur audio
     AudioEngine audioEngine;
-
-    // Paramètres audio
-    unsigned int sampleRate = 44100;
-    unsigned int bufferSize = 512;
-    unsigned int numChannels = 2; // Stéréo
-
-    // Configurer le player avec les paramètres audio réels
-    player.sampleRate = sampleRate;
-    player.bufferSizeSamples = bufferSize;
-    player.calculateTimingParameters(); // Assurez-vous que le player a la bonne taille de buffer pour ses calculs
-
-    // Initialiser le moteur audio, en lui passant le pointeur vers le player
-    if (!audioEngine.init(sampleRate, bufferSize, numChannels, &player)) {
+    // Initialiser AudioEngine avec AudioInfo et le pointeur vers le player
+    if (!audioEngine.init(globalAudioInfo, &player)) {
         std::cerr << "Échec de l'initialisation du moteur audio. Sortie." << std::endl;
         return 1;
     }
 
-    // Démarrer la lecture logique du player
+    // 4. Démarrer la lecture logique du player
     player.setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
-    player.selectSequenceInPlayer(0); // Sélectionner la première séquence de démo
-    player.start(); // Démarrer la logique interne de AdikPlayer (déclenche isPlaying = true)
+    player.selectSequenceInPlayer(0);
+    player.start();
 
-    // Démarrer le flux audio physique via l'AudioEngine
-    if (audioEngine.start(sampleRate, bufferSize)) {
+    // 5. Démarrer le flux audio physique via l'AudioEngine
+    if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
         std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
-        std::cin.get(); // Attend que l'utilisateur appuie sur Entrée
+        std::cin.get();
 
-        player.stop(); // Arrêter la lecture logique du player
-        audioEngine.stop(); // Arrêter le flux audio physique
-        audioEngine.close(); // Fermer et libérer les ressources
+        player.stop();
+        audioEngine.stop();
+        audioEngine.close();
     } else {
         std::cerr << "Échec du démarrage du flux audio. Impossible de lire." << std::endl;
-        // Si le démarrage échoue, assurez-vous de fermer les ressources si elles ont été partiellement allouées.
         audioEngine.close();
         return 1;
     }
@@ -65,7 +60,6 @@ int main() {
     std::cout << "Simulation terminée." << std::endl;
     return 0;
 }
-
 
 /*
 int main() {
