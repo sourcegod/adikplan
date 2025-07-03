@@ -313,7 +313,8 @@ public:
 
     // Simuler le processus de lecture audio en temps réel
     void simulateRealtimePlayback(int numSecondsToSimulate) {
-        start();
+      // Deprecated function, used when there is no Realtime Audio Library  
+      start();
         int totalSamplesToSimulate = numSecondsToSimulate * sampleRate;
         std::vector<float> audioOutputBuffer(bufferSizeSamples); // Buffer pour la sortie audio
 

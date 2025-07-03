@@ -61,18 +61,31 @@ bool RtAudioDriver::startStream(unsigned int sampleRate, unsigned int bufferSize
     }
 }
 
-// Implémentation de RtAudioDriver::closeStream
-void RtAudioDriver::closeStream() {
+// Implémentation de RtAudioDriver::stopStream
+void RtAudioDriver::stopStream() {
     if (isStreamOpen) {
         try {
             if (audio.isStreamRunning()) {
                 audio.stopStream();
             }
+            std::cout << "Flux audio RtAudio arrêté." << std::endl;
+        } catch (RtAudioError &e) {
+            e.printMessage();
+            std::cerr << "Erreur lors de la fermeture du flux audio." << std::endl;
+        }
+    }
+}
+
+
+// Implémentation de RtAudioDriver::closeStream
+void RtAudioDriver::closeStream() {
+    if (isStreamOpen) {
+        try {
             if (audio.isStreamOpen()) {
                 audio.closeStream();
             }
             isStreamOpen = false;
-            std::cout << "Flux audio RtAudio arrêté et fermé." << std::endl;
+            std::cout << "Flux audio RtAudio fermé." << std::endl;
         } catch (RtAudioError &e) {
             e.printMessage();
             std::cerr << "Erreur lors de la fermeture du flux audio." << std::endl;

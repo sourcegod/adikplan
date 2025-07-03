@@ -26,6 +26,7 @@ public:
         closeStream(); // Assure la fermeture propre du flux à la destruction de l'objet
     }
     bool startStream(unsigned int sampleRate, unsigned int bufferSize, void* userData); // Déclaration
+    void stopStream();
     void closeStream(); // Déclaration
 
 
