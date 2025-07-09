@@ -14,6 +14,7 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
     // Caster userData en AdikPlayer*
     AdikPlayer* playerData = static_cast<AdikPlayer*>(userData);
 
+    // std::cout << "\nprocessAudioCallback après caster playerData \n";
     if (!playerData || !playerData->isPlaying) {
         std::fill(outputBuffer, outputBuffer + (numSamples * 2), 0.0f); // *2 pour stéréo
         return;
@@ -40,8 +41,9 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
     // et que le buffer de sortie de RtAudio est stéréo.
     // Si votre mixeur gère directement le stéréo, vous n'avez pas besoin de ça.
     // Supposons que votre mixeur sort du mono pour l'instant et qu'on doit le copier en stéréo.
-    std::vector<float> monoBuffer(numSamples);
-    std::fill(monoBuffer.begin(), monoBuffer.end(), 0.0f);
+    std::vector<float> mixedBuffer(numSamples * 2, 0.0f);
+    // std::fill(monoBuffer.begin(), monoBuffer.end(), 0.0f);
+    // std::cout << "processAudioCallback, préparer le monoBuffer:  \n";
 
     // Boucle pour remplir le buffer audio sample par sample
     // Note: Cette boucle est la logique d'avancement du séquenceur,
@@ -56,71 +58,22 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
         if (playerData->isPlaying && currentPlayingSequence) {
             playerData->currentSampleInStep++;
             if (playerData->currentSampleInStep >= playerData->samplesPerStep) {
-                playerData->advanceStep(currentPlayingSequence);
-                playerData->currentSampleInStep = 0;
+              playerData->advanceStep(currentPlayingSequence);
+              playerData->currentSampleInStep = 0;
+              // std::cout << "\a";  
             }
         }
     }
 
     // Demander au mixeur de mixer tous les canaux pour ce buffer (monoBuffer)
-    playerData->mixer.mixChannels(monoBuffer.data(), numSamples);
+    playerData->mixer.mixChannels(mixedBuffer, numSamples);
 
     // Copier le buffer mono vers le buffer de sortie stéréo de RtAudio
     // Si votre mixeur produit déjà du stéréo, supprimez cette section et
     // modifiez mixChannels pour écrire directement dans 'out'.
     for (unsigned int i = 0; i < numSamples; ++i) {
-        outputBuffer[i * 2] = monoBuffer[i];     // Canal gauche
-        outputBuffer[i * 2 + 1] = monoBuffer[i]; // Canal droit
+        outputBuffer[i * 2] = mixedBuffer[i*2];     // Canal gauche
+        outputBuffer[i * 2 + 1] = mixedBuffer[i*2 +1]; // Canal droit
     }
 }
-
-
-
-
-/*
-// --- Nouvelle fonction de rappel audio globale et statique ---
-// 1. Rendre la fonction processAudioCallback indépendante et statique
-// Elle prend un pointeur void* userData en paramètre, qui sera casté en AdikPlayer.
-void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* userData) {
-    // Caster userData en AdikPlayer*
-    AdikPlayer* playerData = static_cast<AdikPlayer*>(userData);
-
-    if (!playerData || !playerData->isPlaying) {
-        std::fill(outputBuffer, outputBuffer + numSamples, 0.0f); // Remplir de silence si pas en lecture
-        return;
-    }
-
-    // Récupérer la séquence en cours de lecture
-    std::shared_ptr<AdikSequence> currentPlayingSequence = nullptr;
-    if (playerData->currentMode == AdikPlayer::SEQUENCE_MODE) {
-        if (playerData->selectedSequenceInPlayerIndex >= 0 && playerData->selectedSequenceInPlayerIndex < playerData->sequenceList.size()) {
-            currentPlayingSequence = playerData->sequenceList[playerData->selectedSequenceInPlayerIndex];
-        }
-    } else { // SONG_MODE
-        if (playerData->currentSong && playerData->currentSequenceIndexInSong >= 0 && playerData->currentSequenceIndexInSong < playerData->currentSong->sequences.size()) {
-            currentPlayingSequence = playerData->currentSong->sequences[playerData->currentSequenceIndexInSong];
-        }
-    }
-
-    if (!currentPlayingSequence) {
-        std::fill(outputBuffer, outputBuffer + numSamples, 0.0f);
-        return;
-    }
-
-    // Boucle pour remplir le buffer audio sample par sample
-    for (int i = 0; i < numSamples; ++i) {
-        // Vérifier si nous devons déclencher un nouvel événement (passer à un nouveau pas)
-        if (playerData->currentSampleInStep >= playerData->samplesPerStep) {
-            // 2. La fonction processAudioCallback appellera playerData->advanceStep
-            playerData->advanceStep(currentPlayingSequence); // Passer la séquence au besoin
-            playerData->currentSampleInStep = 0; // Réinitialiser le compteur de samples pour le nouveau pas
-        }
-        playerData->currentSampleInStep++; // Avancer le sample dans le pas actuel
-    }
-
-    // Demander au mixeur de mixer tous les canaux pour ce buffer
-    playerData->mixer.mixChannels(outputBuffer, numSamples);
-}
-*/
-
 

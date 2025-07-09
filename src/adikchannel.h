@@ -17,6 +17,11 @@ public:
     float currentPan;
     float currentPitch;
     bool isActive; // Indique si ce canal est actuellement en train de jouer un son
+                   //
+    // Un buffer temporaire pour le son de l'instrument, avant qu'il ne soit mixé.
+    // Sa taille sera ajustée dynamiquement.
+    std::vector<float> instrumentBuffer;
+
 
     // Constructeur
     AdikChannel(int channelId) : id(channelId), currentVelocity(0.0f), currentPan(0.0f), currentPitch(0.0f), isActive(false) {
@@ -30,9 +35,10 @@ public:
         currentPan = pan;
         currentPitch = pitch;
         isActive = true; // Le canal est maintenant actif et devrait rendre le son
+        std::cout << "receiveSound: le Canal est maintenant actif\n";
         if (currentInstrument) {
             currentInstrument->resetPlayback(); // Réinitialise la lecture de l'instrument
-            // std::cout << "Canal " << id << " reçoit un son de '" << currentInstrument->name << "'." << std::endl;
+            std::cout << "Canal " << id << " reçoit un son de '" << currentInstrument->name << "'." << std::endl;
         }
     }
 
@@ -54,18 +60,32 @@ public:
         std::cout << std::endl;
     }
 
-    // Rend le son du canal dans le buffer de sortie
-    void renderToBuffer(float* outputBuffer, int numSamples) {
+    // <--- MODIFIÉ : renderToBuffer
+    // Cette fonction ne va plus directement dans le outputBuffer de la carte son,
+    // mais elle renvoie les données de l'instrument dans son propre format.
+    // Le mixeur s'occupera de la conversion finale.
+    // Retourne le nombre de samples (pas de frames) traités.
+    void render(std::vector<float>& outputBuffer, unsigned int numFrames) {
         if (isActive && currentInstrument) {
-            // L'instrument rend ses données directement dans le buffer
-            currentInstrument->render(outputBuffer, numSamples, currentVelocity, currentPan, currentPitch);
-            // On désactive le canal après l'avoir rendu pour un "one-shot"
-            // Dans un système audio réel, cela serait géré par la durée du son.
-            // Pour cette simulation, un son est joué en une seule passe.
-            isActive = false; // Désactiver après un seul rendu (simule un one-shot)
-            // std::cout << "Canal " << id << " rendu." << std::endl;
+            unsigned int instrChannels = currentInstrument->getNumChannels();
+            // Redimensionner le buffer temporaire pour contenir les données de l'instrument
+            // (numFrames * nombre de canaux de l'instrument)
+            // outputBuffer.assign(numFrames * instrChannels, 0.0f);
+
+            currentInstrument->render(outputBuffer, numFrames, currentVelocity, currentPan, currentPitch);
+
+            // Le canal est "désactivé" si le son est court (one-shot) et que le buffer a été consommé.
+            // Une logique plus sophistiquée pourrait vérifier si AdikSound a encore des samples à lire.
+            if (currentInstrument->sound.currentSamplePosition >= currentInstrument->sound.audioData.size()) {
+                isActive = false;
+                // std::cout << "currentInstrument désactivé, canal id: " << id << "\n";
+                // std::cout << "\a";
+            }
+        } else {
+            outputBuffer.clear(); // S'assurer que le buffer est vide si inactif
         }
     }
+
 };
 
 #endif // ADIKCHANNEL_H

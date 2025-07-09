@@ -27,28 +27,32 @@ int main() {
     globalAudioInfo.display(); // Pour confirmation
 
     // 2. Créer une instance de AdikPlayer
-    AdikPlayer player;
-    player.initParams(globalAudioInfo); // Initialiser AdikPlayer avec AudioInfo
+    // AdikPlayer player;
+    std::shared_ptr<AdikPlayer> player = std::make_shared<AdikPlayer>();
+    player->initParams(globalAudioInfo); // Initialiser AdikPlayer avec AudioInfo
 
     // 3. Créer une instance du moteur audio
     AudioEngine audioEngine;
     // Initialiser AudioEngine avec AudioInfo et le pointeur vers le player
-    if (!audioEngine.init(globalAudioInfo, &player)) {
+    // if (!audioEngine.init(globalAudioInfo, &player)) {
+    if (!audioEngine.init(globalAudioInfo, player)) {
         std::cerr << "Échec de l'initialisation du moteur audio. Sortie." << std::endl;
         return 1;
     }
 
     // 4. Démarrer la lecture logique du player
-    player.setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
-    player.selectSequenceInPlayer(0);
-    player.start();
+    player->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+    player->selectSequenceInPlayer(0);
+    player->start();
 
     // 5. Démarrer le flux audio physique via l'AudioEngine
-    if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
-        std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
-        std::cin.get();
 
-        player.stop();
+    // /*
+    if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
+      std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
+      std::cin.get();
+
+        player->stop();
         audioEngine.stop();
         audioEngine.close();
     } else {
@@ -56,6 +60,7 @@ int main() {
         audioEngine.close();
         return 1;
     }
+    // */
 
     std::cout << "Simulation terminée." << std::endl;
     return 0;

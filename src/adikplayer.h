@@ -94,6 +94,23 @@ public:
     }
 
 
+    /*
+    void loadDefaultInstruments() {
+        globalInstruments.clear();
+        // Création d'instruments de démonstration
+        globalInstruments.push_back(std::make_shared<AdikInstrument>("KICK1", "Kick Drum", "kick.wav", 1)); // Mono
+        globalInstruments.push_back(std::make_shared<AdikInstrument>("SNAR1", "Snare Drum", "snare.wav", 1)); // Mono
+        globalInstruments.push_back(std::make_shared<AdikInstrument>("HHAT1", "Hi-Hat", "hihat.wav", 1));   // Mono
+        globalInstruments.push_back(std::make_shared<AdikInstrument>("CLAP1", "Clap", "clap.wav", 1));     // Mono
+
+        // Exemple de son stéréo (bien que la génération soit mono actuellement)
+        globalInstruments.push_back(std::make_shared<AdikInstrument>("PAD1", "Synth Pad", "pad.wav", 2)); // Stéréo
+        std::cout << "AdikPlayer: Instruments par défaut chargés." << std::endl;
+    }
+    */
+
+
+   
     // Calculer les paramètres de timing basés sur le tempo et le sample rate
     void calculateTimingParameters() {
         // 60 secondes/minute * sampleRate (samples/seconde) / tempoBPM (battements/minute) = samples/battement
@@ -295,6 +312,7 @@ public:
                 if (event->instrument) {
                     float finalVelocity = event->velocity * track.volume;
                     // Route le son vers le mixeur; le mixeur gère maintenant l'instrument pendant sa durée de son
+                    std::cout << "in advanceStep: channelIndex: " << track.mixerChannelIndex << "\n";
                     mixer.routeSound(track.mixerChannelIndex, event->instrument, finalVelocity, event->pan, event->pitch);
                     hasPlayedSound = true;
                 }

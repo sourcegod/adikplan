@@ -20,7 +20,8 @@ public:
     std::unique_ptr<RtAudioDriver> audioDriver;
 
     // Pointeur vers l'instance de AdikPlayer que le callback utilisera
-    AdikPlayer* playerInstance;
+    std::shared_ptr<AdikPlayer> playerInstance;
+
     AudioInfo audioInfo; // Stocke les paramètres audio pour référence
 
     // Constructeur
@@ -40,7 +41,13 @@ public:
      * @param playerData Un pointeur vers l'instance de AdikPlayer.
      * @return True si l'initialisation réussit, False sinon.
      */
-    bool init(const AudioInfo& info, AdikPlayer* playerData) {
+    // bool init(const AudioInfo& info, AdikPlayer* playerData) {
+    bool init(const AudioInfo& info, std::shared_ptr<AdikPlayer> playerData) {
+        if (!playerData) {
+            std::cerr << "Erreur: Le shared_ptr de AdikPlayer fourni est nul." << std::endl;
+            return false;
+        }
+
         this->audioInfo = info; // Copie les paramètres dans la variable membre
         this->playerInstance = playerData;
 
@@ -71,7 +78,7 @@ public:
 
         std::cout << "AudioEngine: Démarrage du flux audio..." << std::endl;
         // Appelez la méthode startStream du driver RtAudio, en passant le playerInstance comme userData.
-        return audioDriver->startStream(audioInfo.sampleRate, audioInfo.bufferSize, playerInstance);
+        return audioDriver->startStream(audioInfo.sampleRate, audioInfo.bufferSize, playerInstance.get());
     }
 
     /**

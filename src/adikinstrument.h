@@ -22,17 +22,34 @@ public:
     AdikSound sound; // L'objet AdikSound qui contient les données audio
 
     // Constructeur
-    AdikInstrument(const std::string& id_val, const std::string& name_val, const std::string& path_val)
+    AdikInstrument(const std::string& id_val, const std::string& name_val,
+                   const std::string& path_val, unsigned int channels = 1) // Par défaut mono
         : id(id_val), name(name_val), audioFilePath(path_val),
           defaultVolume(1.0f), defaultPan(0.0f), defaultPitch(0.0f),
-          sound(id_val) // Initialise l'objet AdikSound avec l'ID de l'instrument (simule le chargement)
+          sound(id_val, channels) // <--- Initialise AdikSound avec les canaux
     {
-        std::cout << "Instrument '" << name << "' (" << id << ") créé." << std::endl;
+        std::cout << "Instrument '" << name << "' (" << id << ") créé, canaux: " << channels << std::endl;
     }
 
-    // Rend le son de l'instrument dans un buffer
-    void render(float* buffer, int numSamples, float finalVelocity, float finalPan, float finalPitch) {
-        sound.readData(buffer, numSamples, finalVelocity, finalPan, finalPitch);
+    // Nouvelle méthode pour obtenir le nombre de canaux de l'instrument
+    unsigned int getNumChannels() const {
+        return sound.numChannels;
+    }
+
+    // <--- MODIFIÉ : Signature de render.
+    // Le buffer passé ici est un buffer temporaire pour l'instrument,
+    // sa taille sera `numSamples * instrument->getNumChannels()`.
+    void render(std::vector<float>& buffer, unsigned int numSamples, float finalVelocity, float finalPan, float finalPitch) {
+        // Remarque: La logique de pan/pitch/velocity sera appliquée par le mixer ou la couche supérieure.
+        // Ici, AdikSound::readData lit les samples bruts.
+        sound.readData(buffer, numSamples); // Lire les samples directement
+
+        // Appliquer la vélocité (volume) et le pitch (simplifié) ici, avant le pan au niveau du mixeur.
+        for (unsigned int i = 0; i < numSamples * sound.numChannels; ++i) {
+            // buffer[i] *= finalVelocity;
+            // La gestion du pitch est plus complexe et n'est pas incluse dans cette simulation simplifiée
+            // car elle implique du resampling ou des algorithmes DSP.
+        }
     }
 
     // Réinitialise la position de lecture du son de l'instrument
