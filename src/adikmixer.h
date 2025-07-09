@@ -72,9 +72,10 @@ public:
             std::cout << "mixChannels: boucle sur les channelList: " << i << ", active: " << channel.isActive << "\n";
             if (channel.isActive && channel.currentInstrument) {
                 unsigned int numInstruChannels = channel.currentInstrument->getNumChannels();
-                instruBuffer.assign(numFrames * numInstruChannels, 0.0f);  
+                // instruBuffer.assign(numFrames * numInstruChannels, 0.0f);  
                 // Demander au canal de rendre son son dans son buffer interne
                 std::cout << "mixChannels: Avant channel.render:\n ";
+                // instruBuffer sera réinitialisé par la fonction readData
                 channel.render(instruBuffer, numFrames);
                 std::cout << "mixchannelList: Après channel.render:\n ";
 
