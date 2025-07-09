@@ -62,12 +62,7 @@ public:
         calculateTimingParameters(); // Calculer samplesPerBeat et samplesPerStep
 
         // Initialiser quelques instruments par défaut
-        addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav"));
-        addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav"));
-        addInstrument(std::make_shared<AdikInstrument>("hihat_closed_1", "Charley Fermé", "path/to/hihat_closed.wav"));
-        addInstrument(std::make_shared<AdikInstrument>("hihat_open_1", "Charley Ouvert", "path/to/hihat_open.wav"));
-        addInstrument(std::make_shared<AdikInstrument>("clap_1", "Clap", "path/to/clap.wav"));
-
+        loadDefaultInstruments();
         // Initialiser les 16 séquences fixes avec des shared_ptr
         sequenceList.reserve(NUM_SEQS);
         for (int i = 0; i < NUM_SEQS; ++i) {
@@ -94,23 +89,17 @@ public:
     }
 
 
-    /*
     void loadDefaultInstruments() {
-        globalInstruments.clear();
-        // Création d'instruments de démonstration
-        globalInstruments.push_back(std::make_shared<AdikInstrument>("KICK1", "Kick Drum", "kick.wav", 1)); // Mono
-        globalInstruments.push_back(std::make_shared<AdikInstrument>("SNAR1", "Snare Drum", "snare.wav", 1)); // Mono
-        globalInstruments.push_back(std::make_shared<AdikInstrument>("HHAT1", "Hi-Hat", "hihat.wav", 1));   // Mono
-        globalInstruments.push_back(std::make_shared<AdikInstrument>("CLAP1", "Clap", "clap.wav", 1));     // Mono
+        addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("hihat_closed_1", "Charley Fermé", "path/to/hihat_closed.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("hihat_open_1", "Charley Ouvert", "path/to/hihat_open.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("clap_1", "Clap", "path/to/clap.wav", 1));
 
-        // Exemple de son stéréo (bien que la génération soit mono actuellement)
-        globalInstruments.push_back(std::make_shared<AdikInstrument>("PAD1", "Synth Pad", "pad.wav", 2)); // Stéréo
         std::cout << "AdikPlayer: Instruments par défaut chargés." << std::endl;
     }
-    */
 
 
-   
     // Calculer les paramètres de timing basés sur le tempo et le sample rate
     void calculateTimingParameters() {
         // 60 secondes/minute * sampleRate (samples/seconde) / tempoBPM (battements/minute) = samples/battement

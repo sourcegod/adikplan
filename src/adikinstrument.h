@@ -23,12 +23,12 @@ public:
 
     // Constructeur
     AdikInstrument(const std::string& id_val, const std::string& name_val,
-                   const std::string& path_val, unsigned int channels = 1) // Par défaut mono
+                   const std::string& path_val, unsigned int numChannels = 1) // Par défaut mono
         : id(id_val), name(name_val), audioFilePath(path_val),
           defaultVolume(1.0f), defaultPan(0.0f), defaultPitch(0.0f),
-          sound(id_val, channels) // <--- Initialise AdikSound avec les canaux
+          sound(id_val, numChannels) // <--- Initialise AdikSound avec les canaux
     {
-        std::cout << "Instrument '" << name << "' (" << id << ") créé, canaux: " << channels << std::endl;
+        std::cout << "Instrument '" << name << "' (" << id << ") créé, canaux: " << numChannels << std::endl;
     }
 
     // Nouvelle méthode pour obtenir le nombre de canaux de l'instrument
