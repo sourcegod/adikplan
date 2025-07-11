@@ -15,7 +15,7 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
     AdikPlayer* playerData = static_cast<AdikPlayer*>(userData);
 
     // std::cout << "\nprocessAudioCallback après caster playerData \n";
-    if (!playerData || !playerData->isPlaying) {
+    if (!playerData) {
         std::fill(outputBuffer, outputBuffer + (numSamples * 2), 0.0f); // *2 pour stéréo
         return;
     }
@@ -58,13 +58,14 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
         if (playerData->isPlaying && currentPlayingSequence) {
             playerData->currentSampleInStep++;
             if (playerData->currentSampleInStep >= playerData->samplesPerStep) {
-              playerData->advanceStep(currentPlayingSequence);
-              playerData->currentSampleInStep = 0;
+                playerData->advanceStep(currentPlayingSequence);
+                playerData->currentSampleInStep = 0;
               // std::cout << "\a";  
             }
         }
     }
 
+    // std::cout << "\a";
     // Demander au mixeur de mixer tous les canaux pour ce buffer (monoBuffer)
     playerData->mixer.mixChannels(mixedBuffer, numSamples);
 

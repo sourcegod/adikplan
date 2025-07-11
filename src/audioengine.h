@@ -23,6 +23,7 @@ public:
     std::shared_ptr<AdikPlayer> playerInstance;
 
     AudioInfo audioInfo; // Stocke les paramètres audio pour référence
+    bool _running = false;
 
     // Constructeur
     AudioEngine() : playerInstance(nullptr) {
@@ -67,10 +68,11 @@ public:
      * @return True si le démarrage réussit, False sinon.
      */
     bool start() {
-      if (!audioDriver) {
+        if (!audioDriver) {
             std::cerr << "AudioEngine: Driver audio non initialisé. Appelez init() d'abord." << std::endl;
             return false;
         }
+
         if (!playerInstance) {
             std::cerr << "AudioEngine: Instance de AdikPlayer non fournie à init()." << std::endl;
             return false;
@@ -78,6 +80,7 @@ public:
 
         std::cout << "AudioEngine: Démarrage du flux audio..." << std::endl;
         // Appelez la méthode startStream du driver RtAudio, en passant le playerInstance comme userData.
+        _running = true;
         return audioDriver->startStream(audioInfo.sampleRate, audioInfo.bufferSize, playerInstance.get());
     }
 
@@ -88,15 +91,22 @@ public:
         if (audioDriver) {
             std::cout << "AudioEngine: Arrêt du flux audio..." << std::endl;
             audioDriver->stopStream(); // Assurez-vous que cette méthode existe et est publique dans RtAudioDriver
+            _running = false;
         } else {
             std::cerr << "AudioEngine: Driver audio non initialisé pour l'arrêt." << std::endl;
         }
     }
 
     /**
+     * @brief Test si le driver audio est lancé.
+    */
+    bool isRunning() { return _running; }
+
+     /**
      * @brief Ferme le driver audio et libère ses ressources.
      */
-    void close() {
+
+     void close() {
         if (audioDriver) {
             std::cout << "AudioEngine: Fermeture du driver audio..." << std::endl;
             audioDriver->closeStream();
@@ -105,7 +115,7 @@ public:
         } else {
             std::cerr << "AudioEngine: Driver audio déjà fermé ou non initialisé." << std::endl;
         }
-    }
+     }
 
 };
 

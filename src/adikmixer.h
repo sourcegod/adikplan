@@ -60,7 +60,8 @@ public:
     // Méthode pour mixer tous les canaux actifs dans un buffer de sortie stéréo final.
     // Le outputBuffer est un buffer entrelacé (LRLR...) de la carte son.
     void mixChannels(std::vector<float>& outputBuffer, unsigned int numFrames) {
-        std::cout << "MixchannelList: avant tout.\n";
+        // std::cout << "\a";  
+        std::cout << "MixChannelList: avant tout.\n";
         // Initialiser le buffer de sortie avec des zéros
         // La taille est numFrames * numOutputChannels (ex: 512 frames * 2 canaux = 1024 floats)
         outputBuffer.assign(numFrames * numOutputChannels, 0.0f);

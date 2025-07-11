@@ -90,11 +90,22 @@ public:
 
 
     void loadDefaultInstruments() {
+        auto sineSynth = std::make_shared<AdikInstrument>("synth_sine", "Synth Sine 440Hz", "none", 1);
+        sineSynth->genTone(AdikInstrument::SINE_WAVE, 440.0f, 44100); // 1 seconde de sine wave à 440Hz
+        addInstrument(sineSynth);
+
+        auto squareSynth = std::make_shared<AdikInstrument>("synth_square", "Synth Square 220Hz", "none", 1);
+        squareSynth->genTone(AdikInstrument::SQUARE_WAVE, 220.0f, 44100); // 1 seconde de square wave à 220Hz
+        addInstrument(squareSynth);
+
+        // /*
         addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("hihat_closed_1", "Charley Fermé", "path/to/hihat_closed.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("hihat_open_1", "Charley Ouvert", "path/to/hihat_open.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("clap_1", "Clap", "path/to/clap.wav", 1));
+        // */
+
 
         std::cout << "AdikPlayer: Instruments par défaut chargés." << std::endl;
     }
@@ -179,6 +190,34 @@ public:
         throw std::runtime_error("Instrument avec l'ID '" + id + "' non trouvé.");
         return nullptr; // Ne devrait pas être atteint grâce à throw
     }
+
+    void playInstrument(int instruIndex) {
+        // Conversion de l'index en itérateur pour trouver l'instrument
+        if (instruIndex < 0 || instruIndex >= globalInstruments.size()) {
+            std::cerr << "Erreur: Index d'instrument invalide: " << instruIndex << std::endl;
+            return;
+        }
+
+        auto it = globalInstruments.begin();
+        std::advance(it, instruIndex); // Déplacer l'itérateur à la position instruIndex
+
+        std::shared_ptr<AdikInstrument> instrumentToPlay = it->second;
+
+        if (instrumentToPlay) {
+            // Optionnel: Réinitialiser l'instrument pour qu'il joue du début
+            instrumentToPlay->resetPlayback();
+
+            // Router l'instrument vers un canal spécifique du mixeur.
+            // Pour un test simple, on peut utiliser le canal 1 (index 0).
+            // Le pan, la vélocité et le pitch peuvent être par défaut pour le test.
+            // Vous pourriez ajouter des paramètres à playInstrument si vous voulez les contrôler.
+            mixer.routeSound(1, instrumentToPlay, 1.0f, 0.0f, 0.0f); // Canal 1, Volume 1.0, Pan 0.0, Pitch 0.0
+            std::cout << "AdikPlayer: Joue l'instrument '" << instrumentToPlay->name << "' sur le canal 1 du mixeur." << std::endl;
+        } else {
+            std::cerr << "AdikPlayer: Instrument introuvable à l'index " << instruIndex << std::endl;
+        }
+    }
+
 
     // --- Méthodes de gestion des modes et séquences ---
 
