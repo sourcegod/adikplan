@@ -42,15 +42,8 @@ public:
      * @param playerData Un pointeur vers l'instance de AdikPlayer.
      * @return True si l'initialisation réussit, False sinon.
      */
-    // bool init(const AudioInfo& info, AdikPlayer* playerData) {
-    bool init(const AudioInfo& info, std::shared_ptr<AdikPlayer> playerData) {
-        if (!playerData) {
-            std::cerr << "Erreur: Le shared_ptr de AdikPlayer fourni est nul." << std::endl;
-            return false;
-        }
-
+    bool init(const AudioInfo& info) {
         this->audioInfo = info; // Copie les paramètres dans la variable membre
-        this->playerInstance = playerData;
 
         // Créer l'instance du driver audio
         audioDriver = std::make_unique<RtAudioDriver>();
@@ -58,6 +51,21 @@ public:
         std::cout << "AudioEngine: Initialisé avec succès." << std::endl;
         audioInfo.display(); // Pour confirmation
         return true;
+    }
+
+    /**
+     * @brief Initialise l'instance du player avec un pointeur partagé.
+     * @param playerInstance Un pointeur vers l'instance de AdikPlayer.
+     */
+    void setPlayer(std::shared_ptr<AdikPlayer> playerInstance) {
+        if (!playerInstance) {
+            std::cerr << "Erreur: Le shared_ptr de AdikPlayer fourni est nul." << std::endl;
+            return;
+        }
+
+        this->playerInstance = playerInstance;
+      
+        return;
     }
 
 

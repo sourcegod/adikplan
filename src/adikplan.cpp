@@ -18,6 +18,21 @@
 #include <memory>
 #include <vector>
 
+// std::shared_ptr<AdikPlayer> player = nullptr;
+std::shared_ptr<AdikPlayer> gPlayer = std::make_shared<AdikPlayer>();
+
+void demo1() {
+    // Jouer le premier instrument (Synth Sine, index 0)
+    gPlayer->playInstrument(5);
+
+    // Attendre un peu pour que le son puisse être traité par le callback audio
+    // Dans une vraie application, cela se ferait dans votre boucle audio principale.
+    std::this_thread::sleep_for(std::chrono::seconds(2)); // Nécessite <chrono> et <thread>
+
+    // Jouer le deuxième instrument (Synth Square, index 1)
+    gPlayer->playInstrument(6);
+
+}
 
 int main() {
     std::cout << "Démarrage de la simulation AdikDrumMachine." << std::endl;
@@ -27,23 +42,24 @@ int main() {
     globalAudioInfo.display(); // Pour confirmation
 
     // 2. Créer une instance de AdikPlayer
-    std::shared_ptr<AdikPlayer> player = std::make_shared<AdikPlayer>();
-    player->initParams(globalAudioInfo); // Initialiser AdikPlayer avec AudioInfo
+    gPlayer->initParams(globalAudioInfo); // Initialiser AdikPlayer avec AudioInfo
 
     // 3. Créer une instance du moteur audio
     AudioEngine audioEngine;
     // Initialiser AudioEngine avec AudioInfo et le pointeur vers le player
-    if (!audioEngine.init(globalAudioInfo, player)) {
+    if (!audioEngine.init(globalAudioInfo)) {
         std::cerr << "Échec de l'initialisation du moteur audio. Sortie." << std::endl;
         return 1;
     }
 
-    // /*
+    // Assigner le l'instance du player à AudioEngine
+    audioEngine.setPlayer(gPlayer);
+    /*
     // 4. Démarrer la lecture logique du player
     player->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
     player->selectSequenceInPlayer(0);
     player->start();
-    // */
+    */
 
     // 5. Démarrer le flux audio physique via l'AudioEngine
 
@@ -51,33 +67,23 @@ int main() {
     if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
       std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
     int i = 0;
-    for (const auto& pair : player->globalInstruments) {
+    for (const auto& pair : gPlayer->globalInstruments) {
         std::cout << "Index " << i << ": " << pair.first << " (" << pair.second->name << ")\n";
         i++;
     }
-
-    // Jouer le premier instrument (Synth Sine, index 0)
-    // player->isPlaying = true;
-    player->playInstrument(5);
-
-    // Attendre un peu pour que le son puisse être traité par le callback audio
-    // Dans une vraie application, cela se ferait dans votre boucle audio principale.
-    std::this_thread::sleep_for(std::chrono::seconds(2)); // Nécessite <chrono> et <thread>
-
-    // Jouer le deuxième instrument (Synth Square, index 1)
-    player->playInstrument(6);
-
+    
+    demo1();
     // Jouer la grosse caisse (son "kick_1"), son index dépendra de l'ordre de map
     // Cherchez son index dans la liste affichée ci-dessus
     // Par exemple, si "kick_1" est à l'index 2
-    // player.playInstrument(2);
+    // player->playInstrument(2);
 
 
 
 
       std::cin.get();
 
-        player->stop();
+        gPlayer->stop();
         audioEngine.stop();
         audioEngine.close();
     } else {
