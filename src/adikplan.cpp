@@ -12,6 +12,7 @@
 #include "audioengine.h"
 #include "adikplayer.h"
 #include "adiktransport.h" // Inclure la nouvelle classe AdikTransport
+#include <ncurses.h>
 
 #include <iostream>
 #include <string>
@@ -34,6 +35,101 @@ void demo1() {
 
 }
 
+void keyHandler() {
+    initscr();             // Initialise la structure de l'écran
+    cbreak();              // Permet de lire les caractères un par un, sans attendre Enter
+    noecho();              // Ne pas afficher les caractères tapés
+    keypad(stdscr, TRUE);  // Active la lecture des touches spéciales (flèches, F-keys)
+
+    printw("--- AdikPlayer UI Alpha ---\n");
+    printw("Appuyez sur 'Q' pour quitter.\n");
+    printw("1: Jouer Sine Wave (440Hz)\n");
+    printw("2: Jouer Square Wave (220Hz)\n");
+    printw("3: Jouer Kick\n");
+    printw("4: Jouer Snare\n");
+    printw("d: Afficher status du mixeur\n");
+    printw("s: Toggle Séquenceur Play/Stop\n");
+    printw("p: Avancer dans la Séquence (si en mode STEP)\n");
+    printw("\n--- Appuyez sur une touche ---\n");
+
+    gPlayer->playInstrument(0);
+    int ch;
+    while ((ch = getch()) != 'q') { // Lire les touches tant que 'q' n'est pas pressé
+        switch (ch) {
+            case '1':
+                gPlayer->playInstrument(0); // Index du Sine Wave
+                mvprintw(LINES - 1, 0, "Joué: Sine Wave (440Hz)   "); // Efface la ligne précédente
+                break;
+            case '2':
+                gPlayer->playInstrument(1); // Index du Square Wave
+                mvprintw(LINES - 1, 0, "Joué: Square Wave (220Hz)");
+                break;
+            case '3':
+                // Trouver l'index du kick_1
+                {
+                    int index = 0;
+                    for (const auto& pair : gPlayer->globalInstruments) {
+                        if (pair.first == "kick_1") {
+                            gPlayer->playInstrument(index);
+                            mvprintw(LINES - 1, 0, "Joué: Kick               ");
+                            break;
+                        }
+                        index++;
+                    }
+                }
+                break;
+            case '4':
+                 // Trouver l'index du snare_1
+                {
+                    int index = 0;
+                    for (const auto& pair : gPlayer->globalInstruments) {
+                        if (pair.first == "snare_1") {
+                            gPlayer->playInstrument(index);
+                            mvprintw(LINES - 1, 0, "Joué: Snare              ");
+                            break;
+                        }
+                        index++;
+                    }
+                }
+                break;
+            case 'd':
+                gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
+                mvprintw(LINES - 1, 0, "Statut du mixeur affiché.");
+                break;
+            case 's':
+                // Ceci est une hypothèse de la fonction dans AdikPlayer pour le toggle
+                // gPlayer->togglePlayback(); // Si vous avez une telle fonction
+                mvprintw(LINES - 1, 0, "Toggle Séquenceur Play/Stop.");
+                break;
+            case 'p':
+                demo1();
+                // Ceci est une hypothèse d'une fonction dans AdikPlayer pour avancer un pas
+                // Utile si vous avez un mode "pas par pas"
+                // gPlayer->advanceSequencerStep();
+                mvprintw(LINES - 1, 0, "Avance d'un pas (fonction non implémentée).");
+                break;
+
+            default:
+                mvprintw(LINES - 1, 0, "Touche '%c' non reconnue. Appuyez sur 'q' pour quitter.", ch);
+                break;
+        }
+        refresh(); // Rafraîchir l'écran pour afficher les changements
+    }
+
+    // 3. Nettoyage de ncurses
+    endwin(); // Restaure le terminal à son état original
+
+    std::cout << "Application terminée. Au revoir !" << std::endl;
+
+    // Joindre le thread audio avant de quitter (pour un arrêt propre)
+    // C'est un exemple. Dans un vrai système RtAudio, vous feriez audio.stop() et audio.close()
+    // Si simulateRealtimePlayback est une boucle infinie, vous devrez ajouter une condition de sortie.
+    // audioThread.join(); // Ne peut pas joindre un thread détaché. Gérer la fin autrement.
+
+    return;
+}
+
+
 int main() {
     std::cout << "Démarrage de la simulation AdikDrumMachine." << std::endl;
 
@@ -54,34 +150,20 @@ int main() {
 
     // Assigner le l'instance du player à AudioEngine
     audioEngine.setPlayer(gPlayer);
-    /*
-    // 4. Démarrer la lecture logique du player
-    player->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
-    player->selectSequenceInPlayer(0);
-    player->start();
-    */
-
-    // 5. Démarrer le flux audio physique via l'AudioEngine
-
-    // /*
-    if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
-      std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
-    int i = 0;
-    for (const auto& pair : gPlayer->globalInstruments) {
-        std::cout << "Index " << i << ": " << pair.first << " (" << pair.second->name << ")\n";
-        i++;
-    }
     
-    demo1();
-    // Jouer la grosse caisse (son "kick_1"), son index dépendra de l'ordre de map
-    // Cherchez son index dans la liste affichée ci-dessus
-    // Par exemple, si "kick_1" est à l'index 2
-    // player->playInstrument(2);
+    // 4. Démarrer le flux audio physique via l'AudioEngine
+    if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
+        std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
+        int i = 0;
+        for (const auto& pair : gPlayer->globalInstruments) {
+            std::cout << "Index " << i << ": " << pair.first << " (" << pair.second->name << ")\n";
+            i++;
+        }
+
+        // 5. Lancer l'interface Text et la gestion des touches
+        keyHandler();
 
 
-
-
-      std::cin.get();
 
         gPlayer->stop();
         audioEngine.stop();
@@ -91,7 +173,6 @@ int main() {
         audioEngine.close();
         return 1;
     }
-    // */
 
     std::cout << "Simulation terminée." << std::endl;
     return 0;
