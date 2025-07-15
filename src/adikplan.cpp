@@ -37,6 +37,7 @@ void demo1() {
 
 void displayStatus(std::string& msg) {
     mvprintw(LINES - 1, 0, msg.c_str());
+        refresh(); // Rafraîchir l'écran pour afficher les changements
 }
 
 void keyHandler() {
@@ -58,70 +59,44 @@ void keyHandler() {
     printw("\n--- Appuyez sur une touche ---\n");
 
     gPlayer->playInstrument(0);
-    int ch;
-    while ((ch = getch()) != 'Q') { // Lire les touches tant que 'Q' n'est pas pressé
-        beep(); 
-        switch (ch) {
+    int key;
+    while ((key = getch()) != 'Q') { // Lire les touches tant que 'Q' n'est pas pressé
+        // beep(); 
+        switch (key) {
             case '1':
                 gPlayer->playInstrument(0); // Index du Sine Wave
-                mvprintw(LINES - 1, 0, "Joué: Sine Wave (440Hz)   "); // Efface la ligne précédente
+                _msgText = "Joué: Sine Wave (440Hz)   "; // Efface la ligne précédente
+                displayStatus(_msgText);
                 break;
             case '2':
                 gPlayer->playInstrument(1); // Index du Square Wave
-                mvprintw(LINES - 1, 0, "Joué: Square Wave (220Hz)");
+                _msgText = "Joué: Square Wave (220Hz)";
+                displayStatus(_msgText);
                 break;
             case '3':
-                // Trouver l'index du kick_1
-                {
-                    int index = 0;
-                    for (const auto& pair : gPlayer->globalInstruments) {
-                        if (pair.first == "kick_1") {
-                            gPlayer->playInstrument(index);
-                            mvprintw(LINES - 1, 0, "Joué: Kick               ");
-                            break;
-                        }
-                        index++;
-                    }
-                }
+                beep(); 
                 break;
             case '4':
-                 // Trouver l'index du snare_1
-                {
-                    int index = 0;
-                    for (const auto& pair : gPlayer->globalInstruments) {
-                        if (pair.first == "snare_1") {
-                            gPlayer->playInstrument(index);
-                            mvprintw(LINES - 1, 0, "Joué: Snare              ");
-                            break;
-                        }
-                        index++;
-                    }
-                }
                 break;
             case 'd':
                 gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
-                mvprintw(LINES - 1, 0, "Statut du mixeur affiché.");
+              _msgText = "Statut du mixeur affiché.";
+              displayStatus(_msgText);
                 break;
             case 's':
                 // Ceci est une hypothèse de la fonction dans AdikPlayer pour le toggle
                 // gPlayer->togglePlayback(); // Si vous avez une telle fonction
-                mvprintw(LINES - 1, 0, "Toggle Séquenceur Play/Stop.");
+                beep();
                 break;
             case 'p':
                 demo1();
-                // Ceci est une hypothèse d'une fonction dans AdikPlayer pour avancer un pas
-                // Utile si vous avez un mode "pas par pas"
-                // gPlayer->advanceSequencerStep();
-                mvprintw(LINES - 1, 0, "Avance d'un pas (fonction non implémentée).");
                 break;
 
             default:
-                // mvprintw(LINES - 1, 0, "Touche '%c' non reconnue. Appuyez sur 'Q' pour quitter.", ch);
-                _msgText = "Touche " + std::to_string(ch) + " non reconnue. Appuyez sur 'Q' pour quitter.";
+                _msgText = "Touche " + std::to_string(key) + " non reconnue. Appuyez sur 'Q' pour quitter.";
                 displayStatus(_msgText);
                 break;
         }
-        refresh(); // Rafraîchir l'écran pour afficher les changements
     
     } // End while loop
 
