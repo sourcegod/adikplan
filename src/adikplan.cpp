@@ -21,7 +21,7 @@
 
 // std::shared_ptr<AdikPlayer> player = nullptr;
 std::shared_ptr<AdikPlayer> gPlayer = std::make_shared<AdikPlayer>();
-
+std::string _msgText = "";
 void demo1() {
     // Jouer le premier instrument (Synth Sine, index 0)
     gPlayer->playInstrument(5);
@@ -35,11 +35,16 @@ void demo1() {
 
 }
 
+void displayStatus(std::string& msg) {
+    mvprintw(LINES - 1, 0, msg.c_str());
+}
+
 void keyHandler() {
     initscr();             // Initialise la structure de l'écran
     cbreak();              // Permet de lire les caractères un par un, sans attendre Enter
     noecho();              // Ne pas afficher les caractères tapés
     keypad(stdscr, TRUE);  // Active la lecture des touches spéciales (flèches, F-keys)
+    // nodelay(stdscr, 1);
 
     printw("--- AdikPlayer UI Alpha ---\n");
     printw("Appuyez sur 'Q' pour quitter.\n");
@@ -54,7 +59,8 @@ void keyHandler() {
 
     gPlayer->playInstrument(0);
     int ch;
-    while ((ch = getch()) != 'q') { // Lire les touches tant que 'q' n'est pas pressé
+    while ((ch = getch()) != 'Q') { // Lire les touches tant que 'Q' n'est pas pressé
+        beep(); 
         switch (ch) {
             case '1':
                 gPlayer->playInstrument(0); // Index du Sine Wave
@@ -110,11 +116,14 @@ void keyHandler() {
                 break;
 
             default:
-                mvprintw(LINES - 1, 0, "Touche '%c' non reconnue. Appuyez sur 'q' pour quitter.", ch);
+                // mvprintw(LINES - 1, 0, "Touche '%c' non reconnue. Appuyez sur 'Q' pour quitter.", ch);
+                _msgText = "Touche " + std::to_string(ch) + " non reconnue. Appuyez sur 'Q' pour quitter.";
+                displayStatus(_msgText);
                 break;
         }
         refresh(); // Rafraîchir l'écran pour afficher les changements
-    }
+    
+    } // End while loop
 
     // 3. Nettoyage de ncurses
     endwin(); // Restaure le terminal à son état original

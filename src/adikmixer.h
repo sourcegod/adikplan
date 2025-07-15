@@ -61,24 +61,24 @@ public:
     // Le outputBuffer est un buffer entrelacé (LRLR...) de la carte son.
     void mixChannels(std::vector<float>& outputBuffer, unsigned int numFrames) {
         // std::cout << "\a";  
-        std::cout << "MixChannelList: avant tout.\n";
+        // std::cout << "MixChannelList: avant tout.\n";
         // Initialiser le buffer de sortie avec des zéros
         // La taille est numFrames * numOutputChannels (ex: 512 frames * 2 canaux = 1024 floats)
         outputBuffer.assign(numFrames * numOutputChannels, 0.0f);
-        std::cout << "MixchannelList: après l'initialisation du monoBuffer.\n";
+        // std::cout << "MixchannelList: après l'initialisation du monoBuffer.\n";
 
         // Parcourir chaque canal du mixeur
         for (auto i =0; i < channelList.size(); i++) {
             auto& channel = channelList[i];  
-            std::cout << "mixChannels: boucle sur les channelList: " << i << ", active: " << channel.isActive << "\n";
+            // std::cout << "mixChannels: boucle sur les channelList: " << i << ", active: " << channel.isActive << "\n";
             if (channel.isActive && channel.currentInstrument) {
                 unsigned int numInstruChannels = channel.currentInstrument->getNumChannels();
                 // instruBuffer.assign(numFrames * numInstruChannels, 0.0f);  
                 // Demander au canal de rendre son son dans son buffer interne
-                std::cout << "mixChannels: Avant channel.render:\n ";
+                // std::cout << "mixChannels: Avant channel.render:\n ";
                 // instruBuffer sera réinitialisé par la fonction readData
                 channel.render(instruBuffer, numFrames);
-                std::cout << "mixchannelList: Après channel.render:\n ";
+                // std::cout << "mixchannelList: Après channel.render:\n ";
 
 
                 // Appliquer le panoramique et mixer dans le buffer de sortie final (stéréo)
