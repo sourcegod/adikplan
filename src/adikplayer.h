@@ -99,6 +99,10 @@ public:
         squareSynth->defaultVolume =0.1;
         addInstrument(squareSynth);
 
+        auto noiseSynth = std::make_shared<AdikInstrument>("synth_noise", "Synth White Noise", "none", 1);
+        noiseSynth->genTone(AdikInstrument::WHITE_NOISE_WAVE, 0.8f, 44100); // 1 seconde de square wave à 220Hz
+        addInstrument(noiseSynth);
+
         // /*
         addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));

@@ -7,6 +7,7 @@
 #include <numeric> // Pour std::iota
 #include <cmath>
 #include <algorithm> // Pour std::fill
+#include <random>
 
 // Constantes pour la simulation
 const float PI = 3.14159265358979323846f;
@@ -172,6 +173,36 @@ public:
                   << " secondes, Canaux = " << numChannels << std::endl;
     }
 
+    void whiteNoiseWave(float amplitude = 1.0f, unsigned int numFrames = 44100) {
+        size_t totalSamples = numFrames * numChannels;
+
+        // Redimensionner le vecteur audioData pour accueillir les nouvelles données
+        audioData.resize(totalSamples);
+        
+        // Réinitialiser la position de lecture
+        currentSamplePosition = 0;
+
+        // Moteur de nombres aléatoires pour le bruit blanc
+        // Utiliser std::mt19937 pour un générateur de meilleure qualité que rand()
+        // et std::uniform_real_distribution pour des nombres flottants dans une plage spécifique.
+        std::random_device rd; // Source de "vraie" entropie (si disponible)
+        std::mt19937 gen(rd()); // Générateur de nombres aléatoires Mersenne Twister, initialisé avec rd
+        // Distribution uniforme de -amplitude à +amplitude
+        std::uniform_real_distribution<float> dis(-MAX_AMPLITUDE * amplitude, MAX_AMPLITUDE * amplitude);
+
+        // Générer le bruit blanc
+        for (size_t i = 0; i < numFrames; ++i) {
+            float sampleValue = dis(gen); // Générer un nombre aléatoire pour chaque frame
+
+            // Remplir les canaux pour cette frame
+            for (unsigned int c = 0; c < numChannels; ++c) {
+                audioData[i * numChannels + c] = sampleValue;
+            }
+        }
+        std::cout << "Génération de bruit blanc : Durée = " << (float)numFrames / sampleRate
+                  << " secondes, Amplitude = " << amplitude * MAX_AMPLITUDE
+                  << ", Canaux = " << numChannels << std::endl;
+    }
 
 };
 

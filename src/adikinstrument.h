@@ -12,19 +12,23 @@
 
 class AdikInstrument {
 public:
+    enum WaveType {
+        SINE_WAVE = 0,
+        SQUARE_WAVE = 1,
+        WHITE_NOISE_WAVE = 2,
+
+        // Ajoutez d'autres types d'ondes ici si vous les implémentez dans AdikSound
+        // TRIANGLE_WAVE = 2,
+        // SAW_WAVE = 3
+    };
+
+
     std::string id;
     std::string name;
     std::string audioFilePath; // Chemin vers le fichier audio (pour l'exemple)
     float defaultVolume;
     float defaultPan;
     float defaultPitch; // Changement de hauteur (pitch shift)
-    enum WaveType {
-        SINE_WAVE = 0,
-        SQUARE_WAVE = 1,
-        // Ajoutez d'autres types d'ondes ici si vous les implémentez dans AdikSound
-        // TRIANGLE_WAVE = 2,
-        // SAW_WAVE = 3
-    };
 
 
     AdikSound sound; // L'objet AdikSound qui contient les données audio
@@ -75,6 +79,11 @@ public:
                 sound.squareWave(freq, numFrames);
                 name = "Square Wave " + std::to_string(static_cast<int>(freq)) + "Hz"; // Mise à jour du nom de l'instrument
                 break;
+            case WHITE_NOISE_WAVE: // <-- AJOUTE ÇA
+                sound.whiteNoiseWave(1.0f, numFrames); // La fréquence n'est pas pertinente pour le bruit blanc
+                name = "White Noise"; // Ou "White Noise " + std::to_string(numFrames) + " frames"
+                break;
+
             default:
                 std::cerr << "Type d'onde inconnu. Génération d'une onde sinusoïdale par défaut." << std::endl;
                 sound.sineWave(freq, numFrames);
