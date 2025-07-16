@@ -74,9 +74,10 @@ void keyHandler() {
                 displayStatus(_msgText);
                 break;
             case '3':
-                beep(); 
+                gPlayer->playInstrument(2);
                 break;
             case '4':
+                gPlayer->playInstrument(4);
                 break;
             case 'd':
                 gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
@@ -138,10 +139,9 @@ int main() {
     // 4. Démarrer le flux audio physique via l'AudioEngine
     if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
         std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
-        int i = 0;
-        for (const auto& pair : gPlayer->globalInstruments) {
-            std::cout << "Index " << i << ": " << pair.first << " (" << pair.second->name << ")\n";
-            i++;
+        for (size_t i=0; i < gPlayer->instrumentList.size(); i++) {
+          const auto& instru = gPlayer->instrumentList[i];
+          std::cout << "Index " << i << ": " << instru->id << " (" << instru->name << ")\n";
         }
 
         // 5. Lancer l'interface Text et la gestion des touches

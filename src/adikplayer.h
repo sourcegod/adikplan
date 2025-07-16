@@ -33,7 +33,8 @@ public:
 
     static const int NUM_SEQS = 16; // Nombre fixe de séquences disponibles pour le Player
 
-    std::map<std::string, std::shared_ptr<AdikInstrument>> globalInstruments; // Tous les instruments disponibles
+    // std::map<std::string, std::shared_ptr<AdikInstrument>> globalInstruments; // Tous les instruments disponibles
+    std::vector<std::shared_ptr<AdikInstrument>> instrumentList; // Tous les instruments disponibles
     std::vector<std::shared_ptr<AdikSequence>> sequenceList;                   // La liste fixe de 16 séquences disponibles pour le Player
     std::shared_ptr<AdikSong> currentSong;                                   // Le morceau actuellement chargé
 
@@ -179,13 +180,19 @@ public:
 
     // Ajoute un instrument à la collection globale
     void addInstrument(std::shared_ptr<AdikInstrument> instrument) {
-        globalInstruments[instrument->id] = instrument;
+        // globalInstruments[instrument->id] = instrument;
+        instrumentList.push_back(instrument);
     }
 
     // Récupère un instrument par son ID
     std::shared_ptr<AdikInstrument> getInstrument(const std::string& id) {
-        if (globalInstruments.count(id)) {
+      /*  
+      if (globalInstruments.count(id)) {
             return globalInstruments[id];
+        }
+        */
+        for (const auto& instru: instrumentList) {
+            if (instru->id == id) return instru;
         }
         throw std::runtime_error("Instrument avec l'ID '" + id + "' non trouvé.");
         return nullptr; // Ne devrait pas être atteint grâce à throw
@@ -193,15 +200,20 @@ public:
 
     void playInstrument(int instruIndex) {
         // Conversion de l'index en itérateur pour trouver l'instrument
-        if (instruIndex < 0 || instruIndex >= globalInstruments.size()) {
+        // if (instruIndex < 0 || instruIndex >= globalInstruments.size()) {
+        if (instruIndex < 0 || instruIndex >= instrumentList.size()) {
             std::cerr << "Erreur: Index d'instrument invalide: " << instruIndex << std::endl;
             return;
         }
 
+        /*
         auto it = globalInstruments.begin();
         std::advance(it, instruIndex); // Déplacer l'itérateur à la position instruIndex
+        */
 
-        std::shared_ptr<AdikInstrument> instrumentToPlay = it->second;
+        // std::shared_ptr<AdikInstrument> instrumentToPlay = it->second;
+        auto instrumentToPlay = instrumentList[instruIndex];
+        // std::cout << "voici it->first: " << it->first << std::endl;
 
         if (instrumentToPlay) {
             // Optionnel: Réinitialiser l'instrument pour qu'il joue du début
@@ -211,8 +223,9 @@ public:
             // Pour un test simple, on peut utiliser le canal 1 (index 0).
             // Le pan, la vélocité et le pitch peuvent être par défaut pour le test.
             // Vous pourriez ajouter des paramètres à playInstrument si vous voulez les contrôler.
-            mixer.routeSound(1, instrumentToPlay, 1.0f, 0.0f, 0.0f); // Canal 1, Volume 1.0, Pan 0.0, Pitch 0.0
-            std::cout << "AdikPlayer: Joue l'instrument '" << instrumentToPlay->name << "' sur le canal 1 du mixeur." << std::endl;
+            auto channelIndex =  instruIndex +1;
+            mixer.routeSound(channelIndex, instrumentToPlay, 1.0f, 0.0f, 0.0f); // Canal 1, Volume 1.0, Pan 0.0, Pitch 0.0
+            std::cout << "AdikPlayer: Joue l'instrument '" << instrumentToPlay->name << "' sur le canal " << channelIndex << " du mixeur." << std::endl;
         } else {
             std::cerr << "AdikPlayer: Instrument introuvable à l'index " << instruIndex << std::endl;
         }
@@ -220,7 +233,6 @@ public:
 
 
     // --- Méthodes de gestion des modes et séquences ---
-
     // Définit le mode de lecture (Sequence ou Song)
     void setPlaybackMode(PlaybackMode mode) {
         currentMode = mode;

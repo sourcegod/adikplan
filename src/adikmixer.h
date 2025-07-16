@@ -34,7 +34,7 @@ public:
     void routeSound(int channelIndex, std::shared_ptr<AdikInstrument> instrument, float finalVelocity, float finalPan, float finalPitch) {
         if (channelIndex > 0 && channelIndex <= NUM_MIXER_channelList) {
             channelList[channelIndex - 1].receiveSound(instrument, finalVelocity, finalPan, finalPitch);
-            std::cout << "routeSound: Après receiveSound\n";
+            // std::cout << "routeSound: Après receiveSound\n";
         } else {
             std::cerr << "Erreur: Canal mixeur invalide: " << channelIndex << std::endl;
         }
