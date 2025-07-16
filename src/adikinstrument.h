@@ -54,7 +54,7 @@ public:
 
         // Appliquer la vélocité (volume) et le pitch (simplifié) ici, avant le pan au niveau du mixeur.
         for (unsigned int i = 0; i < numSamples * sound.numChannels; ++i) {
-            // buffer[i] *= finalVelocity;
+            buffer[i] *= defaultVolume;
             // La gestion du pitch est plus complexe et n'est pas incluse dans cette simulation simplifiée
             // car elle implique du resampling ou des algorithmes DSP.
         }

@@ -91,10 +91,12 @@ public:
     void loadDefaultInstruments() {
         auto sineSynth = std::make_shared<AdikInstrument>("synth_sine", "Synth Sine 440Hz", "none", 1);
         sineSynth->genTone(AdikInstrument::SINE_WAVE, 440.0f, 44100); // 1 seconde de sine wave à 440Hz
+        sineSynth->defaultVolume = 0.5;
         addInstrument(sineSynth);
 
         auto squareSynth = std::make_shared<AdikInstrument>("synth_square", "Synth Square 220Hz", "none", 1);
         squareSynth->genTone(AdikInstrument::SQUARE_WAVE, 220.0f, 44100); // 1 seconde de square wave à 220Hz
+        squareSynth->defaultVolume =0.1;
         addInstrument(squareSynth);
 
         // /*
