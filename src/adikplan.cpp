@@ -63,32 +63,6 @@ void keyHandler() {
     while ((key = getch()) != 'Q') { // Lire les touches tant que 'Q' n'est pas pressé
         // beep(); 
         switch (key) {
-            case '1':
-                gPlayer->playInstrument(0); // Index du Sine Wave
-                _msgText = "Joué: Sine Wave (440Hz)   "; // Efface la ligne précédente
-                displayStatus(_msgText);
-                break;
-            case '2':
-                gPlayer->playInstrument(1); // Index du Square Wave
-                _msgText = "Joué: Square Wave (220Hz)";
-                displayStatus(_msgText);
-                break;
-            case '3':
-                gPlayer->playInstrument(2);
-                break;
-            case '4':
-                gPlayer->playInstrument(3);
-                break;
-            case '5':
-                gPlayer->playInstrument(4);
-                break;
-            case '6':
-                gPlayer->playInstrument(5);
-                break;
-            case '7':
-                gPlayer->playInstrument(6);
-                break;
-
             case 'd':
                 gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
               _msgText = "Statut du mixeur affiché.";
@@ -104,8 +78,14 @@ void keyHandler() {
                 break;
 
             default:
-                _msgText = "Touche " + std::to_string(key) + " non reconnue. Appuyez sur 'Q' pour quitter.";
-                displayStatus(_msgText);
+                // manadge key from '0' to '9'
+                if (key >= 48 &&  key <=57) {
+                  auto instruIndex = key - 48;
+                  gPlayer->playInstrument(instruIndex);
+                } else {
+                    _msgText = "Touche " + std::to_string(key) + " non reconnue. Appuyez sur 'Q' pour quitter.";
+                    displayStatus(_msgText);
+                }
                 break;
         }
     
