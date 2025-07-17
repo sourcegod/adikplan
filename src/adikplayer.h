@@ -104,6 +104,11 @@ public:
         noiseSynth->defaultVolume = 0.5;
         addInstrument(noiseSynth);
 
+        auto sineNoiseSynth = std::make_shared<AdikInstrument>("synth_sineNoise", "Synth Sine Noise", "none", 1);
+        sineNoiseSynth->genTone(AdikInstrument::COMBINED_SINE_NOISE_WAVE, 440.0f);
+        sineNoiseSynth->defaultVolume = 0.5;
+        addInstrument(sineNoiseSynth);
+
         // /*
         addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));

@@ -16,7 +16,7 @@ public:
         SINE_WAVE = 0,
         SQUARE_WAVE = 1,
         WHITE_NOISE_WAVE = 2,
-        COMBINED_SINE_NOISE = 3,
+        COMBINED_SINE_NOISE_WAVE = 3,
 
         // Ajoutez d'autres types d'ondes ici si vous les implémentez dans AdikSound
         // TRIANGLE_WAVE = 2,
@@ -84,7 +84,7 @@ public:
                 sound.whiteNoiseWave(1.0f, numFrames); // La fréquence n'est pas pertinente pour le bruit blanc
                 name = "White Noise"; // Ou "White Noise " + std::to_string(numFrames) + " frames"
                 break;
-            case COMBINED_SINE_NOISE:
+            case COMBINED_SINE_NOISE_WAVE:
                 // Utilisez freq pour la fréquence de la sinusoïdale, et numFrames pour la durée
                 // Les ratios d'amplitude sont hardcodés ici, ou passés en paramètres si genTone est étendu
                 sound.combinedSineNoise(freq, 0.7f, 0.3f, numFrames); // ex: 70% sine, 30% noise

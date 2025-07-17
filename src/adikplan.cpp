@@ -77,11 +77,18 @@ void keyHandler() {
                 gPlayer->playInstrument(2);
                 break;
             case '4':
-                gPlayer->playInstrument(4);
+                gPlayer->playInstrument(3);
                 break;
             case '5':
+                gPlayer->playInstrument(4);
+                break;
+            case '6':
                 gPlayer->playInstrument(5);
                 break;
+            case '7':
+                gPlayer->playInstrument(6);
+                break;
+
             case 'd':
                 gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
               _msgText = "Statut du mixeur affiché.";
