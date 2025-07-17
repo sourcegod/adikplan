@@ -204,6 +204,46 @@ public:
                   << ", Canaux = " << numChannels << std::endl;
     }
 
+    void combinedSineNoise(float sineFreq, float sineAmplitudeRatio, float noiseAmplitudeRatio, unsigned int numFrames) {
+        size_t totalSamples = numFrames * numChannels;
+        audioData.resize(totalSamples);
+        currentSamplePosition = 0;
+
+        // Générateur de bruit blanc
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> noise_dis(-MAX_AMPLITUDE * noiseAmplitudeRatio, MAX_AMPLITUDE * noiseAmplitudeRatio);
+
+        // Calculer les amplitudes réelles
+        float actualSineAmplitude = MAX_AMPLITUDE * sineAmplitudeRatio;
+        // Clippez si nécessaire
+        if (actualSineAmplitude > MAX_AMPLITUDE) actualSineAmplitude = MAX_AMPLITUDE;
+        if (noise_dis.max() > MAX_AMPLITUDE) noise_dis = std::uniform_real_distribution<float>(-MAX_AMPLITUDE, MAX_AMPLITUDE); // Recalcule la distribution
+
+        for (size_t i = 0; i < numFrames; ++i) {
+            float time = static_cast<float>(i) / sampleRate;
+
+            // Générer l'échantillon sinusoïdal
+            float sineSample = actualSineAmplitude * std::sin(2.0f * PI * sineFreq * time);
+
+            // Générer l'échantillon de bruit blanc
+            float noiseSample = noise_dis(gen);
+
+            // Additionner les deux (et clipper si la somme dépasse l'amplitude max)
+            float combinedSample = sineSample + noiseSample;
+            if (combinedSample > MAX_AMPLITUDE) combinedSample = MAX_AMPLITUDE;
+            if (combinedSample < -MAX_AMPLITUDE) combinedSample = -MAX_AMPLITUDE;
+
+            // Remplir les canaux
+            for (unsigned int c = 0; c < numChannels; ++c) {
+                audioData[i * numChannels + c] = combinedSample;
+            }
+        }
+        std::cout << "Génération d'une onde combinée Sine+Noise : Fréquence Sinusoïdale = " << sineFreq
+                  << " Hz, Durée = " << (float)numFrames / sampleRate
+                  << " secondes, Canaux = " << numChannels << std::endl;
+    }
+
 };
 
 #endif // ADIKSOUND_H
