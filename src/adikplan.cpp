@@ -79,6 +79,9 @@ void keyHandler() {
             case '4':
                 gPlayer->playInstrument(4);
                 break;
+            case '5':
+                gPlayer->playInstrument(5);
+                break;
             case 'd':
                 gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
               _msgText = "Statut du mixeur affiché.";
