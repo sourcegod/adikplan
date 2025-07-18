@@ -113,88 +113,72 @@ public:
         currentSamplePosition = 0;
     }
 
-    void sineWave(float freq = 440.0f, unsigned int numFrames = 44100) {
-        // Définir le nombre de samples total nécessaire, en tenant compte des canaux
-        // numFrames représente le nombre de points temporels, pas le nombre total d'échantillons si stéréo
+    void sineWave(float freq = 440.0f, float amplitude = 1.0f, unsigned int numFrames = 44100) {
         size_t totalSamples = numFrames * numChannels;
-
-        // Redimensionner le vecteur audioData pour accueillir les nouvelles données
         audioData.resize(totalSamples);
-        
-        // Réinitialiser la position de lecture
         currentSamplePosition = 0;
 
-        // Générer l'onde sinusoïdale
-        for (size_t i = 0; i < numFrames; ++i) {
-            // Calculer la phase pour l'échantillon actuel
-            // i est l'indice de la frame (point temporel)
-            float time = static_cast<float>(i) / sampleRate;
-            float sampleValue = MAX_AMPLITUDE * std::sin(2.0f * PI * freq * time);
+        float actualAmplitude = MAX_AMPLITUDE * amplitude;
+        if (actualAmplitude > 1.0f) actualAmplitude = 1.0f;
+        else if (actualAmplitude < 0.0f) actualAmplitude = 0.0f;
 
-            // Remplir les canaux pour cette frame
+        for (size_t i = 0; i < numFrames; ++i) {
+            float time = static_cast<float>(i) / sampleRate;
+            float sampleValue = actualAmplitude * std::sin(2.0f * PI * freq * time);
+
             for (unsigned int c = 0; c < numChannels; ++c) {
                 audioData[i * numChannels + c] = sampleValue;
             }
         }
-        std::cout << "Génération d'une onde sinusoïdale : Fréquence = " << freq 
-                  << " Hz, Durée = " << (float)numFrames / sampleRate 
-                  << " secondes, Canaux = " << numChannels << std::endl;
+        std::cout << "Génération d'une onde sinusoïdale : Fréquence = " << freq
+                  << " Hz, Durée = " << (float)numFrames / sampleRate
+                  << " secondes, Amplitude = " << actualAmplitude
+                  << ", Canaux = " << numChannels << std::endl;
     }
 
-    void squareWave(float freq = 440.0f, unsigned int numFrames = 44100) {
+    void squareWave(float freq = 440.0f, float amplitude = 1.0f, unsigned int numFrames = 44100) {
         size_t totalSamples = numFrames * numChannels;
-
-        // Redimensionner le vecteur audioData pour accueillir les nouvelles données
         audioData.resize(totalSamples);
-        
-        // Réinitialiser la position de lecture
         currentSamplePosition = 0;
 
-        // Générer l'onde carrée
+        float actualAmplitude = MAX_AMPLITUDE * amplitude;
+        if (actualAmplitude > 1.0f) actualAmplitude = 1.0f;
+        else if (actualAmplitude < 0.0f) actualAmplitude = 0.0f;
+
         for (size_t i = 0; i < numFrames; ++i) {
             float time = static_cast<float>(i) / sampleRate;
-            // Calculer la phase modulée entre 0 et 1 (ou 0 et 2*PI, puis modulo)
             float phase = std::fmod(freq * time, 1.0f); 
             
             float sampleValue;
-            if (phase < 0.5f) { // Première moitié du cycle
-                sampleValue = MAX_AMPLITUDE;
-            } else { // Deuxième moitié du cycle
-                sampleValue = -MAX_AMPLITUDE;
+            if (phase < 0.5f) {
+                sampleValue = actualAmplitude;
+            } else {
+                sampleValue = -actualAmplitude;
             }
 
-            // Remplir les canaux pour cette frame
             for (unsigned int c = 0; c < numChannels; ++c) {
                 audioData[i * numChannels + c] = sampleValue;
             }
         }
         std::cout << "Génération d'une onde carrée : Fréquence = " << freq
                   << " Hz, Durée = " << (float)numFrames / sampleRate
-                  << " secondes, Canaux = " << numChannels << std::endl;
+                  << " secondes, Amplitude = " << actualAmplitude
+                  << ", Canaux = " << numChannels << std::endl;
     }
 
     void whiteNoiseWave(float amplitude = 1.0f, unsigned int numFrames = 44100) {
         size_t totalSamples = numFrames * numChannels;
-
-        // Redimensionner le vecteur audioData pour accueillir les nouvelles données
         audioData.resize(totalSamples);
-        
-        // Réinitialiser la position de lecture
         currentSamplePosition = 0;
 
-        // Moteur de nombres aléatoires pour le bruit blanc
-        // Utiliser std::mt19937 pour un générateur de meilleure qualité que rand()
-        // et std::uniform_real_distribution pour des nombres flottants dans une plage spécifique.
-        std::random_device rd; // Source de "vraie" entropie (si disponible)
-        std::mt19937 gen(rd()); // Générateur de nombres aléatoires Mersenne Twister, initialisé avec rd
-        // Distribution uniforme de -amplitude à +amplitude
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        // Ajuste la distribution à l'amplitude réelle souhaitée
         std::uniform_real_distribution<float> dis(-MAX_AMPLITUDE * amplitude, MAX_AMPLITUDE * amplitude);
 
-        // Générer le bruit blanc
         for (size_t i = 0; i < numFrames; ++i) {
-            float sampleValue = dis(gen); // Générer un nombre aléatoire pour chaque frame
+            float sampleValue = dis(gen);
 
-            // Remplir les canaux pour cette frame
             for (unsigned int c = 0; c < numChannels; ++c) {
                 audioData[i * numChannels + c] = sampleValue;
             }
@@ -204,7 +188,7 @@ public:
                   << ", Canaux = " << numChannels << std::endl;
     }
 
-    void combinedSineNoise(float sineFreq, float sineAmplitudeRatio, float noiseAmplitudeRatio, unsigned int numFrames) {
+    void combinedSineNoise(float sineFreq = 440.0f, float sineAmplitudeRatio = 0.7f, float noiseAmplitudeRatio = 0.3f, unsigned int numFrames = 44100) {
         size_t totalSamples = numFrames * numChannels;
         audioData.resize(totalSamples);
         currentSamplePosition = 0;
@@ -212,14 +196,16 @@ public:
         // Générateur de bruit blanc
         std::random_device rd;
         std::mt19937 gen(rd());
+        // La distribution du bruit est proportionnelle à son ratio et MAX_AMPLITUDE
         std::uniform_real_distribution<float> noise_dis(-MAX_AMPLITUDE * noiseAmplitudeRatio, MAX_AMPLITUDE * noiseAmplitudeRatio);
 
-        // Calculer les amplitudes réelles
+        // Calcul de l'amplitude réelle de la sinusoïde
         float actualSineAmplitude = MAX_AMPLITUDE * sineAmplitudeRatio;
-        // Clippez si nécessaire
-        if (actualSineAmplitude > MAX_AMPLITUDE) actualSineAmplitude = MAX_AMPLITUDE;
-        if (noise_dis.max() > MAX_AMPLITUDE) noise_dis = std::uniform_real_distribution<float>(-MAX_AMPLITUDE, MAX_AMPLITUDE); // Recalcule la distribution
-
+        
+        // Assurer que les amplitudes combinées ne dépassent pas MAX_AMPLITUDE (clipping)
+        // C'est une simplification, car la somme peut dépasser 1.0f même si les individus sont < 1.0f
+        // Un clipping final est nécessaire
+        
         for (size_t i = 0; i < numFrames; ++i) {
             float time = static_cast<float>(i) / sampleRate;
 
@@ -229,10 +215,12 @@ public:
             // Générer l'échantillon de bruit blanc
             float noiseSample = noise_dis(gen);
 
-            // Additionner les deux (et clipper si la somme dépasse l'amplitude max)
+            // Additionner les deux échantillons
             float combinedSample = sineSample + noiseSample;
+
+            // Appliquer un clipping dur pour s'assurer que le sample reste dans la plage [-MAX_AMPLITUDE, MAX_AMPLITUDE]
             if (combinedSample > MAX_AMPLITUDE) combinedSample = MAX_AMPLITUDE;
-            if (combinedSample < -MAX_AMPLITUDE) combinedSample = -MAX_AMPLITUDE;
+            else if (combinedSample < -MAX_AMPLITUDE) combinedSample = -MAX_AMPLITUDE;
 
             // Remplir les canaux
             for (unsigned int c = 0; c < numChannels; ++c) {
@@ -241,7 +229,9 @@ public:
         }
         std::cout << "Génération d'une onde combinée Sine+Noise : Fréquence Sinusoïdale = " << sineFreq
                   << " Hz, Durée = " << (float)numFrames / sampleRate
-                  << " secondes, Canaux = " << numChannels << std::endl;
+                  << " secondes, Ratio Sine = " << sineAmplitudeRatio
+                  << ", Ratio Noise = " << noiseAmplitudeRatio
+                  << ", Canaux = " << numChannels << std::endl;
     }
 
 };

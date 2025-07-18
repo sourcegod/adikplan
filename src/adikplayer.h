@@ -87,29 +87,30 @@ public:
         audioInfo.display(); // Pour confirmation
     }
 
-
     void loadDefaultInstruments() {
         auto sineSynth = std::make_shared<AdikInstrument>("synth_sine", "Synth Sine 440Hz", "none", 1);
-        sineSynth->genTone(AdikInstrument::SINE_WAVE, 440.0f, 44100); // 1 seconde de sine wave à 440Hz
-        sineSynth->defaultVolume = 0.5;
+        sineSynth->genTone(AdikInstrument::SINE_WAVE, 440.0f, 44100, 0.5f); // Ajout du paramètre amplitude
+        sineSynth->defaultVolume = 0.5f;
         addInstrument(sineSynth);
 
         auto squareSynth = std::make_shared<AdikInstrument>("synth_square", "Synth Square 220Hz", "none", 1);
-        squareSynth->genTone(AdikInstrument::SQUARE_WAVE, 220.0f, 44100); // 1 seconde de square wave à 220Hz
-        squareSynth->defaultVolume =0.1;
+        squareSynth->genTone(AdikInstrument::SQUARE_WAVE, 220.0f, 44100, 0.5f); // Ajout du paramètre amplitude
+        squareSynth->defaultVolume = 0.1f;
         addInstrument(squareSynth);
 
         auto noiseSynth = std::make_shared<AdikInstrument>("synth_noise", "Synth White Noise", "none", 1);
-        noiseSynth->genTone(AdikInstrument::WHITE_NOISE_WAVE, 0.8f, 4410);
-        noiseSynth->defaultVolume = 0.5;
+        noiseSynth->genTone(AdikInstrument::WHITE_NOISE_WAVE, 0.0f, 44100, 0.8f); // Amplitude à 0.8 pour le bruit
+        noiseSynth->defaultVolume = 0.5f;
         addInstrument(noiseSynth);
 
         auto sineNoiseSynth = std::make_shared<AdikInstrument>("synth_sineNoise", "Synth Sine Noise", "none", 1);
-        sineNoiseSynth->genTone(AdikInstrument::COMBINED_SINE_NOISE_WAVE, 440.0f);
-        sineNoiseSynth->defaultVolume = 0.5;
+        // On passe 440Hz comme fréquence principale pour la sinusoïde dans le mix.
+        // Les ratios de mélange sont définis DANS combinedSineNoise pour l'instant.
+        sineNoiseSynth->genTone(AdikInstrument::COMBINED_SINE_NOISE_WAVE, 440.0f, 44100);
+        sineNoiseSynth->defaultVolume = 0.5f;
         addInstrument(sineNoiseSynth);
 
-        // /*
+        // /* (vos instruments basés sur fichiers) */
         addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));
         addInstrument(std::make_shared<AdikInstrument>("hihat_closed_1", "Charley Fermé", "path/to/hihat_closed.wav", 1));
@@ -117,11 +118,9 @@ public:
         addInstrument(std::make_shared<AdikInstrument>("clap_1", "Clap", "path/to/clap.wav", 1));
         // */
 
-
         std::cout << "AdikPlayer: Instruments par défaut chargés." << std::endl;
     }
-
-
+    //
     // Calculer les paramètres de timing basés sur le tempo et le sample rate
     void calculateTimingParameters() {
         // 60 secondes/minute * sampleRate (samples/seconde) / tempoBPM (battements/minute) = samples/battement

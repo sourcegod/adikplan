@@ -70,30 +70,33 @@ public:
         sound.resetPlayback();
     }
 
-    void genTone(WaveType soundType = SINE_WAVE, float freq = 440.0f, unsigned int numFrames = 44100) {
+    void genTone(WaveType soundType = SINE_WAVE, float freq = 440.0f, unsigned int numFrames = 44100, float amplitude = 1.0f) {
+        // Le paramètre 'amplitude' est maintenant aussi dans genTone pour passer à squareWave, sineWave, whiteNoiseWave
+        // Pour COMBINED_SINE_NOISE_WAVE, nous utiliserons des ratios internes ou ajouterons d'autres paramètres si nécessaire.
         switch (soundType) {
             case SINE_WAVE:
-                sound.sineWave(freq, numFrames);
-                name = "Sine Wave " + std::to_string(static_cast<int>(freq)) + "Hz"; // Mise à jour du nom de l'instrument
+                sound.sineWave(freq, amplitude, numFrames); // Passe l'amplitude
+                name = "Sine Wave " + std::to_string(static_cast<int>(freq)) + "Hz";
                 break;
             case SQUARE_WAVE:
-                sound.squareWave(freq, numFrames);
-                name = "Square Wave " + std::to_string(static_cast<int>(freq)) + "Hz"; // Mise à jour du nom de l'instrument
+                sound.squareWave(freq, amplitude, numFrames); // Passe l'amplitude
+                name = "Square Wave " + std::to_string(static_cast<int>(freq)) + "Hz";
                 break;
-            case WHITE_NOISE_WAVE: // <-- AJOUTE ÇA
-                sound.whiteNoiseWave(1.0f, numFrames); // La fréquence n'est pas pertinente pour le bruit blanc
-                name = "White Noise"; // Ou "White Noise " + std::to_string(numFrames) + " frames"
+            case WHITE_NOISE_WAVE:
+                sound.whiteNoiseWave(amplitude, numFrames); // Passe l'amplitude
+                name = "White Noise";
                 break;
-            case COMBINED_SINE_NOISE_WAVE:
-                // Utilisez freq pour la fréquence de la sinusoïdale, et numFrames pour la durée
-                // Les ratios d'amplitude sont hardcodés ici, ou passés en paramètres si genTone est étendu
-                sound.combinedSineNoise(freq, 0.7f, 0.3f, numFrames); // ex: 70% sine, 30% noise
-                name = "Combined Sine+Noise " + std::to_string(static_cast<int>(freq)) + "Hz";
+            case COMBINED_SINE_NOISE_WAVE: // <-- NOUVEAU CASE
+                // Ici, vous passez les paramètres spécifiques à combinedSineNoise.
+                // Pour l'exemple, j'utilise un ratio 0.7 pour sine et 0.3 pour noise,
+                // et la fréquence passée est celle de la composante sinusoïdale.
+                // Vous pourriez ajouter des paramètres à genTone pour contrôler ces ratios si besoin.
+                sound.combinedSineNoise(freq, 0.7f, 0.3f, numFrames);
+                name = "Sine+Noise " + std::to_string(static_cast<int>(freq)) + "Hz";
                 break;
-
             default:
                 std::cerr << "Type d'onde inconnu. Génération d'une onde sinusoïdale par défaut." << std::endl;
-                sound.sineWave(freq, numFrames);
+                sound.sineWave(freq, amplitude, numFrames);
                 name = "Default Sine Wave " + std::to_string(static_cast<int>(freq)) + "Hz";
                 break;
         }
