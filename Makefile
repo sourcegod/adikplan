@@ -17,30 +17,44 @@ SRCS_DIR = src
 # Répertoire de sortie pour les fichiers objets (.o) et l'exécutable
 BUILD_DIR = build
 
-# Nom de l'exécutable final
-EXEC_NAME = adikplan
+# Noms des exécutables finaux
+EXEC_NAME_ADIKPLAN = adikplan
+EXEC_NAME_ADIKTUI = adiktui
 
 # -----------------------------------------------------------------------------
-# Ne modifiez pas les lignes ci-dessous, elles gèrent la logique de compilation
+# Définition des sources et objets pour AdikPlan
+# Exclut adiktui.cpp car il contient le main de l'autre exécutable
+SRCS_ADIKPLAN = $(filter-out $(SRCS_DIR)/adiktui.cpp, $(wildcard $(SRCS_DIR)/*.cpp))
+OBJS_ADIKPLAN = $(patsubst $(SRCS_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS_ADIKPLAN))
 
-# Recherche de tous les fichiers sources .cpp dans le répertoire SRCS_DIR
-SRCS = $(wildcard $(SRCS_DIR)/*.cpp)
+# Définition des sources et objets pour AdikTUI
+# Inclut adiktui.cpp et les autres fichiers nécessaires pour AdikTUI,
+# mais exclut adikplan.cpp si nécessaire (dans votre cas, adiktui.cpp suffit comme main)
+# Nous devons compiler tous les autres fichiers .cpp sauf adikplan.cpp pour adiktui
+SRCS_ADIKTUI = $(filter-out $(SRCS_DIR)/adikplan.cpp, $(wildcard $(SRCS_DIR)/*.cpp))
+OBJS_ADIKTUI = $(patsubst $(SRCS_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS_ADIKTUI))
 
-# Dérivation des noms des fichiers objets (.o)
-# Chaque fichier .cpp dans SRCS_DIR/ sera compilé en un fichier .o dans BUILD_DIR/
-OBJS = $(patsubst $(SRCS_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+# Cible par défaut : construire les deux exécutables
+all: $(BUILD_DIR) $(BUILD_DIR)/$(EXEC_NAME_ADIKPLAN) $(BUILD_DIR)/$(EXEC_NAME_ADIKTUI)
 
-# Cible par défaut : construire l'exécutable
-all: $(BUILD_DIR) $(BUILD_DIR)/$(EXEC_NAME)
+# -----------------------------------------------------------------------------
+# Règles pour l'exécutable AdikPlan
 
-# Règle pour lier les fichiers objets en exécutable
-$(BUILD_DIR)/$(EXEC_NAME): $(OBJS)
-	@echo "Liaison de l'exécutable $(EXEC_NAME)..."
-	$(CXX) $(OBJS) -o $@ $(LDFLAGS) # $@ est le nom de la cible (l'exécutable)
+$(BUILD_DIR)/$(EXEC_NAME_ADIKPLAN): $(OBJS_ADIKPLAN)
+	@echo "Liaison de l'exécutable $(EXEC_NAME_ADIKPLAN)..."
+	$(CXX) $(OBJS_ADIKPLAN) -o $@ $(LDFLAGS)
 
-# Règle pour compiler chaque fichier .cpp en .o
-# $< est le premier prérequis (le fichier .cpp)
-# $@ est le nom de la cible (le fichier .o)
+# -----------------------------------------------------------------------------
+# Règles pour l'exécutable AdikTUI
+
+$(BUILD_DIR)/$(EXEC_NAME_ADIKTUI): $(OBJS_ADIKTUI)
+	@echo "Liaison de l'exécutable $(EXEC_NAME_ADIKTUI)..."
+	$(CXX) $(OBJS_ADIKTUI) -o $@ $(LDFLAGS)
+
+# -----------------------------------------------------------------------------
+# Règles de compilation génériques pour les fichiers objets
+# Cette règle compile tout fichier .cpp en .o, indépendamment de l'exécutable final.
+# Cela permet de réutiliser les fichiers objets compilés pour les deux exécutables.
 $(BUILD_DIR)/%.o: $(SRCS_DIR)/%.cpp $(BUILD_DIR)
 	@echo "Compilation de $< en $@..."
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -53,6 +67,6 @@ $(BUILD_DIR):
 # Cible 'clean' pour supprimer tous les fichiers générés
 clean:
 	@echo "Nettoyage des fichiers générés..."
-	@rm -rf $(BUILD_DIR) # Supprime tout le répertoire de build
+	@rm -rf $(BUILD_DIR)
 
-.PHONY: all clean $(BUILD_DIR) # Déclare les cibles comme "phony" pour qu'elles soient toujours exécutées
+.PHONY: all clean $(BUILD_DIR)
