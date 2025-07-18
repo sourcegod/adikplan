@@ -6,104 +6,104 @@
  * Author: Coolbrother
  *
  * ***/
-
 #include "adikplan.h"
 #include "audioinfo.h"
 #include "audioengine.h"
 #include "adikplayer.h"
 #include "adiktransport.h" // Inclure la nouvelle classe AdikTransport
-#include <ncurses.h>
 
 #include <iostream>
 #include <string>
 #include <memory>
 #include <vector>
+#include <chrono> // Nécessaire pour std::this_thread::sleep_for
+#include <thread> // Nécessaire pour std::this_thread::sleep_for
 
-// std::shared_ptr<AdikPlayer> player = nullptr;
+// Déclaration de gPlayer comme variable globale
 std::shared_ptr<AdikPlayer> gPlayer = std::make_shared<AdikPlayer>();
+
+// Variable globale pour les messages d'état (utilisée uniquement si nécessaire, sinon elle peut être locale à main)
 std::string _msgText = "";
+
+// Fonction de démonstration (peut rester telle quelle, elle n'utilise pas ncurses)
 void demo1() {
     // Jouer le premier instrument (Synth Sine, index 0)
     gPlayer->playInstrument(5);
 
     // Attendre un peu pour que le son puisse être traité par le callback audio
-    // Dans une vraie application, cela se ferait dans votre boucle audio principale.
-    std::this_thread::sleep_for(std::chrono::seconds(2)); // Nécessite <chrono> et <thread>
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     // Jouer le deuxième instrument (Synth Square, index 1)
     gPlayer->playInstrument(6);
-
 }
 
-void displayStatus(std::string& msg) {
-    mvprintw(LINES - 1, 0, msg.c_str());
-        refresh(); // Rafraîchir l'écran pour afficher les changements
+// Fonction displayStatus simplifiée pour utiliser std::cout
+void displayStatus(const std::string& msg) {
+    std::cout << "Status: " << msg << std::endl;
 }
 
+// Fonction keyHandler simplifiée pour utiliser std::cin.get()
 void keyHandler() {
-    initscr();             // Initialise la structure de l'écran
-    cbreak();              // Permet de lire les caractères un par un, sans attendre Enter
-    noecho();              // Ne pas afficher les caractères tapés
-    keypad(stdscr, TRUE);  // Active la lecture des touches spéciales (flèches, F-keys)
-    // nodelay(stdscr, 1);
+    std::cout << "--- AdikPlayer Console UI Alpha ---" << std::endl;
+    std::cout << "Appuyez sur 'Q' pour quitter." << std::endl;
+    std::cout << "1: Jouer Sine Wave (440Hz)" << std::endl;
+    std::cout << "2: Jouer Square Wave (220Hz)" << std::endl;
+    std::cout << "3: Jouer Kick" << std::endl;
+    std::cout << "4: Jouer Snare" << std::endl;
+    std::cout << "d: Afficher status du mixeur" << std::endl;
+    std::cout << "s: Toggle Séquenceur Play/Stop" << std::endl;
+    std::cout << "p: Avancer dans la Séquence (si en mode STEP)" << std::endl;
+    std::cout << "\n--- Appuyez sur une touche et ENTER ---" << std::endl;
 
-    printw("--- AdikPlayer UI Alpha ---\n");
-    printw("Appuyez sur 'Q' pour quitter.\n");
-    printw("1: Jouer Sine Wave (440Hz)\n");
-    printw("2: Jouer Square Wave (220Hz)\n");
-    printw("3: Jouer Kick\n");
-    printw("4: Jouer Snare\n");
-    printw("d: Afficher status du mixeur\n");
-    printw("s: Toggle Séquenceur Play/Stop\n");
-    printw("p: Avancer dans la Séquence (si en mode STEP)\n");
-    printw("\n--- Appuyez sur une touche ---\n");
+    if (gPlayer) {
+        gPlayer->playInstrument(0); // Jouer un son initial si le joueur est prêt
+    }
 
-    gPlayer->playInstrument(0);
-    int key;
-    while ((key = getch()) != 'Q') { // Lire les touches tant que 'Q' n'est pas pressé
-        // beep(); 
+    char key;
+    while (std::cin.get(key) && key != 'Q') { // Lire les caractères ligne par ligne
         switch (key) {
             case 'd':
-                gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
-              _msgText = "Statut du mixeur affiché.";
-              displayStatus(_msgText);
+                if (gPlayer) {
+                    gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
+                    _msgText = "Statut du mixeur affiché.";
+                } else {
+                    _msgText = "Erreur: Player non initialisé.";
+                }
+                displayStatus(_msgText);
                 break;
             case 's':
-                // Ceci est une hypothèse de la fonction dans AdikPlayer pour le toggle
                 // gPlayer->togglePlayback(); // Si vous avez une telle fonction
-                beep();
+                _msgText = "Séquenceur: Fonctionnalité non implémentée (toggle Play/Stop).";
+                displayStatus(_msgText);
                 break;
             case 'p':
                 demo1();
+                _msgText = "Démonstration lancée.";
+                displayStatus(_msgText);
                 break;
-
             default:
-                // manadge key from '0' to '9'
-                if (key >= 48 &&  key <=57) {
-                  auto instruIndex = key - 48;
-                  gPlayer->playInstrument(instruIndex);
+                // Gérer les touches de '0' à '9'
+                if (key >= '0' && key <= '9') {
+                    int instruIndex = key - '0';
+                    if (gPlayer && instruIndex < gPlayer->instrumentList.size()) {
+                        gPlayer->playInstrument(instruIndex);
+                        _msgText = "Jouer l'instrument " + std::to_string(instruIndex) + ".";
+                    } else {
+                        _msgText = "Index d'instrument invalide ou player non initialisé.";
+                    }
                 } else {
-                    _msgText = "Touche " + std::to_string(key) + " non reconnue. Appuyez sur 'Q' pour quitter.";
-                    displayStatus(_msgText);
+                    _msgText = "Touche '" + std::string(1, key) + "' non reconnue. Appuyez sur 'Q' pour quitter.";
                 }
+                displayStatus(_msgText);
                 break;
         }
-    
-    } // End while loop
-
-    // 3. Nettoyage de ncurses
-    endwin(); // Restaure le terminal à son état original
+        // Pour gérer le caractère de nouvelle ligne laissé par std::cin.get()
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
+        std::cout << "\n--- Appuyez sur une touche et ENTER ---" << std::endl; // Réafficher l'invite
+    }
 
     std::cout << "Application terminée. Au revoir !" << std::endl;
-
-    // Joindre le thread audio avant de quitter (pour un arrêt propre)
-    // C'est un exemple. Dans un vrai système RtAudio, vous feriez audio.stop() et audio.close()
-    // Si simulateRealtimePlayback est une boucle infinie, vous devrez ajouter une condition de sortie.
-    // audioThread.join(); // Ne peut pas joindre un thread détaché. Gérer la fin autrement.
-
-    return;
 }
-
 
 int main() {
     std::cout << "Démarrage de la simulation AdikDrumMachine." << std::endl;
@@ -123,21 +123,19 @@ int main() {
         return 1;
     }
 
-    // Assigner le l'instance du player à AudioEngine
+    // Assigner l'instance du player à AudioEngine
     audioEngine.setPlayer(gPlayer);
     
     // 4. Démarrer le flux audio physique via l'AudioEngine
-    if (audioEngine.start()) { // start() n'a plus besoin des paramètres, ils sont stockés dans audioEngine.audioSetup
-        std::cout << "Lecture en cours... (Appuyez sur Entrée pour arrêter)" << std::endl;
-        for (size_t i=0; i < gPlayer->instrumentList.size(); i++) {
-          const auto& instru = gPlayer->instrumentList[i];
-          std::cout << "Index " << i << ": " << instru->id << " (" << instru->name << ")\n";
+    if (audioEngine.start()) {
+        std::cout << "Lecture en cours..." << std::endl;
+        for (size_t i = 0; i < gPlayer->instrumentList.size(); i++) {
+            const auto& instru = gPlayer->instrumentList[i];
+            std::cout << "Index " << i << ": " << instru->id << " (" << instru->name << ")" << std::endl;
         }
 
-        // 5. Lancer l'interface Text et la gestion des touches
+        // 5. Lancer l'interface Console et la gestion des touches
         keyHandler();
-
-
 
         gPlayer->stop();
         audioEngine.stop();
@@ -151,7 +149,6 @@ int main() {
     std::cout << "Simulation terminée." << std::endl;
     return 0;
 }
-
 
 /*
 int main() {
