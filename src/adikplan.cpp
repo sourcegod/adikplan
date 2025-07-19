@@ -81,6 +81,11 @@ void keyHandler() {
                 _msgText = "Démonstration lancée.";
                 displayStatus(_msgText);
                 break;
+            case 'v':
+                gPlayer->stop();
+                _msgText = "Séquenceur mis en pause.";
+                displayStatus(_msgText);
+                break;
 
             case ' ':
                 if (gPlayer) {
