@@ -11,6 +11,7 @@
 #include "audioengine.h"
 #include "adikplayer.h"
 #include "adiktransport.h" // Inclure la nouvelle classe AdikTransport
+#include "utils.h"
 
 #include <iostream>
 #include <string>
@@ -26,14 +27,6 @@ std::shared_ptr<AdikPlayer> gPlayer = std::make_shared<AdikPlayer>();
 std::string _msgText = "";
 #include <chrono> // Pour std::chrono::seconds, milliseconds, nanoseconds
 #include <thread> // Pour std::this_thread::sleep_for
-
-// Fonction utilitaire pour la mise en pause
-void sleep(float numSecs) {
-    // Convertit les secondes flottantes en une durée de nanosecondes
-    // Cela permet de gérer les parties décimales des secondes
-    std::this_thread::sleep_for(std::chrono::duration<float>(numSecs));
-}
-
 // Fonction de démonstration (peut rester telle quelle, elle n'utilise pas ncurses)
 void demo1() {
     // Jouer le premier instrument (Synth Sine, index 0)
