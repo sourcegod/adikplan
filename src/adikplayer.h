@@ -46,7 +46,7 @@ public:
 
     int currentStepInSequence;          // Le pas actuel en cours de lecture dans la séquence
     long long currentSampleInStep;      // Le sample actuel dans le pas courant
-    bool isPlaying;                     // Indique si le séquenceur est en lecture
+    bool _playing;                     // Indique si le séquenceur est en lecture
 
     // Variables de contrôle des modes
     PlaybackMode currentMode;                   // Mode de lecture actuel
@@ -55,7 +55,7 @@ public:
 
 
     AdikPlayer() : tempoBPM(120), sampleRate(44100), bufferSizeSamples(512), // Taille de buffer typique
-                     currentStepInSequence(0), currentSampleInStep(0), isPlaying(false),
+                     currentStepInSequence(0), currentSampleInStep(0), _playing(false),
                      currentMode(SEQUENCE_MODE), selectedSequenceInPlayerIndex(0), currentSequenceIndexInSong(0) {
 
         calculateTimingParameters(); // Calculer samplesPerBeat et samplesPerStep
@@ -305,19 +305,22 @@ public:
             std::cerr << "Aucun morceau ou séquence dans le morceau à jouer en mode SONG." << std::endl;
             return;
         }
-        isPlaying = true;
+        _playing = true;
         // On ne réinitialise plus les steps ici, car AdikTransport.stop() s'en charge.
         // start() signifie juste "commencer à jouer à la position actuelle".
         std::cout << "Lecture démarrée (interne)." << std::endl;
     }
 
     void stop() { // Appelé par AdikTransport
-        isPlaying = false;
+        _playing = false;
         // AdikTransport est responsable de la réinitialisation de la position
         std::cout << "Lecture arrêtée (interne)." << std::endl;
     }
 
 
+    // renvoi l'état du séquenceur, en lecture ou non
+    bool isPlaying() { return _playing; }
+    
     // Rétablit l'ancienne fonction AdikPlayer::advanceStep
     // Gère l'avancement du séquenceur, le déclenchement des événements et le bouclage.
     void advanceStep(std::shared_ptr<AdikSequence> currentPlayingSequence) {

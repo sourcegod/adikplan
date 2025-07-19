@@ -55,7 +55,7 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
     // Pour un callback orienté bloc (comme RtAudio) :
     // Avancez le séquenceur sur la base du nombre total de samples traités.
     for (unsigned int i = 0; i < numSamples; ++i) {
-        if (playerData->isPlaying && currentPlayingSequence) {
+        if (playerData->isPlaying() && currentPlayingSequence) {
             playerData->currentSampleInStep++;
             // std::cout << "\a";  
             if (playerData->currentSampleInStep >= playerData->samplesPerStep) {

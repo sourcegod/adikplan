@@ -36,8 +36,8 @@ public:
     // ::pause: pour mettre en pause la séquence ou le morceau courant, au step en courant
     void pause() {
         if (player) {
-            if (player->isPlaying) {
-                player->isPlaying = false; // Mettre directement la variable à false
+            if (player->_playing) {
+                player->_playing = false; // Mettre directement la variable à false
                 std::cout << "[TRANSPORT] Lecture en pause au pas " << player->currentStepInSequence << "." << std::endl;
             } else {
                 std::cout << "[TRANSPORT] Le lecteur n'est pas en lecture, impossible de mettre en pause." << std::endl;
@@ -139,7 +139,7 @@ public:
 
         // État de la lecture
         std::string playState = "Arrêté";
-        if (player->isPlaying) {
+        if (player->_playing) {
             playState = "En Lecture";
         } else if (player->currentSampleInStep > 0 || player->currentStepInSequence > 0) {
             playState = "En Pause"; // Si n'est pas en lecture mais a déjà joué ou est positionné

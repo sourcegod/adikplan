@@ -89,7 +89,7 @@ void keyHandler() {
 
             case ' ':
                 if (gPlayer) {
-                    if (gPlayer->isPlaying) {
+                    if (gPlayer->isPlaying()) {
                         gPlayer->stop();
                         _msgText = "Séquenceur mis en pause.";
                     } else {

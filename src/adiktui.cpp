@@ -111,7 +111,7 @@ void AdikTUI::keyHandler() {
 
             case ' ': // Nouvelle case pour la barre d'espace
                 if (gPlayer) {
-                    if (gPlayer->isPlaying) { // Supposons une méthode isPlaying()
+                    if (gPlayer->isPlaying()) { 
                         gPlayer->stop();
                         _msgText = "Séquenceur mis en pause.";
                     } else {
