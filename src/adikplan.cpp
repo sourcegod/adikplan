@@ -62,30 +62,6 @@ void keyHandler() {
     char key;
     while (std::cin.get(key) && key != 'Q') { // Lire les caractères ligne par ligne
         switch (key) {
-          case ' ':
-            case ' ': // Nouvelle case pour la barre d'espace
-                if (gPlayer) {
-                    if (gPlayer->isPlaying()) { // Supposons une méthode isPlaying()
-                        gPlayer->stop();
-                        _msgText = "Séquenceur mis en pause.";
-                    } else {
-                        gPlayer->start();
-                        _msgText = "Séquenceur démarré.";
-                    }
-                } else {
-                    _msgText = "Erreur: Player non initialisé.";
-                }
-                displayStatus(_msgText);
-                break;
-
-            case ' ':
-              if (gPlayer->isPlaying) {
-                  gPlayer->start();
-              } else {
-                  gPlayer->stop();
-              }
-        break;
-
             case 'd':
                 if (gPlayer) {
                     gPlayer->mixer.displayMixerStatus(); // Afficher l'état du mixeur
@@ -105,6 +81,23 @@ void keyHandler() {
                 _msgText = "Démonstration lancée.";
                 displayStatus(_msgText);
                 break;
+
+            case ' ':
+                if (gPlayer) {
+                    if (gPlayer->isPlaying) {
+                        gPlayer->stop();
+                        _msgText = "Séquenceur mis en pause.";
+                    } else {
+                        gPlayer->start();
+                        _msgText = "Séquenceur démarré.";
+                    }
+                } else {
+                    _msgText = "Erreur: Player non initialisé.";
+                }
+                displayStatus(_msgText);
+                break;
+
+
             default:
                 // Gérer les touches de '0' à '9'
                 if (key >= '0' && key <= '9') {
