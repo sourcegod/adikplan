@@ -24,17 +24,141 @@ std::shared_ptr<AdikPlayer> gPlayer = std::make_shared<AdikPlayer>();
 
 // Variable globale pour les messages d'état (utilisée uniquement si nécessaire, sinon elle peut être locale à main)
 std::string _msgText = "";
+#include <chrono> // Pour std::chrono::seconds, milliseconds, nanoseconds
+#include <thread> // Pour std::this_thread::sleep_for
+
+// Fonction utilitaire pour la mise en pause
+void sleep(float numSecs) {
+    // Convertit les secondes flottantes en une durée de nanosecondes
+    // Cela permet de gérer les parties décimales des secondes
+    std::this_thread::sleep_for(std::chrono::duration<float>(numSecs));
+}
 
 // Fonction de démonstration (peut rester telle quelle, elle n'utilise pas ncurses)
 void demo1() {
     // Jouer le premier instrument (Synth Sine, index 0)
-    gPlayer->playInstrument(5);
+    gPlayer->playInstrument(0);
 
     // Attendre un peu pour que le son puisse être traité par le callback audio
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    sleep(2.0f);
 
     // Jouer le deuxième instrument (Synth Square, index 1)
     gPlayer->playInstrument(6);
+}
+
+void demo2() {
+    // Créer une instance de AdikPlayer (qui sera gérée par shared_ptr)
+    // std::shared_ptr<AdikPlayer> player = std::make_shared<AdikPlayer>();
+
+    // Créer une instance de AdikTransport en lui passant le player
+    AdikTransport transport(gPlayer);
+
+    // --- DÉMONSTRATION DU MODE SÉQUENCE EN TEMPS RÉEL (SIMULÉ) ---
+    std::cout << "\n========== MODE SÉQUENCE (TEMPS RÉEL SIMULÉ) ==========" << std::endl;
+    gPlayer->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+
+    gPlayer->selectSequenceInPlayer(0); // "Intro Groove (2 Mesures)"
+    transport.printInfo();
+    std::cout << "\n--- Simulation en temps réel de la Séquence 'Intro Groove' (Player Index 0) ---" << std::endl;
+    transport.play();
+    sleep(5); // Jouons pendant 5 secondes pour voir plusieurs boucles si la séquence est courte
+    transport.stop();
+    transport.printInfo();
+
+    std::cout << "\n--- Réduction du volume du Charley Fermé sur Séquence 0 du Player et relecture en temps réel ---" << std::endl;
+    gPlayer->sequenceList[0]->getTrack(2).volume = 0.2f;
+    transport.play();
+    sleep(5);
+    transport.stop();
+
+    gPlayer->selectSequenceInPlayer(1); // "Chorus Beat (1 Mesure)"
+    transport.printInfo();
+    std::cout << "\n--- Simulation en temps réel de la Séquence 'Chorus Beat' (Player Index 1) ---" << std::endl;
+    transport.play();
+    sleep(3); // Jouons 3 secondes
+    transport.stop();
+
+
+    // --- DÉMONSTRATION DES NOUVELLES FONCTIONS DE TRANSPORT ---
+    std::cout << "\n\n========== DÉMONSTRATION DES FONCTIONS DE TRANSPORT ==========" << std::endl;
+    gPlayer->setPlaybackMode(AdikPlayer::SEQUENCE_MODE);
+    gPlayer->selectSequenceInPlayer(0); // On revient sur la séquence 0 (Intro Groove)
+
+    std::cout << "\n--- Test de Pause ---" << std::endl;
+    transport.play();
+    sleep(2); // Joue pendant 2 secondes
+    transport.pause();
+    transport.printInfo();
+    sleep(1); // Ne devrait rien jouer
+    transport.play(); // Reprendre la lecture
+    sleep(2);
+    transport.stop();
+    transport.printInfo();
+
+    std::cout << "\n--- Test de setPosition ---" << std::endl;
+    transport.setPosition(8); // Déplacer au 9ème pas (index 8)
+    transport.printInfo();
+    transport.play();
+    sleep(3); // Jouer à partir de là
+    transport.stop();
+
+    std::cout << "\n--- Test de Rewind et Forward ---" << std::endl;
+    transport.setPosition(10);
+    transport.printInfo();
+    transport.rewind(); // Reculer de 1 pas
+    transport.printInfo();
+    transport.forward(5); // Avancer de 5 pas
+    transport.printInfo();
+    transport.play();
+    sleep(3);
+    transport.stop();
+
+
+    // --- DÉMONSTRATION DU MODE SONG EN TEMPS RÉEL (SIMULÉ) AVEC TRANSPORT ---
+    std::cout << "\n\n========== MODE SONG (TEMPS RÉEL SIMULÉ) AVEC TRANSPORT ==========" << std::endl;
+    gPlayer->setPlaybackMode(AdikPlayer::SONG_MODE);
+
+    gPlayer->clearCurrentSong();
+    gPlayer->currentSong->name = "Mon Morceau Final (Demo Temps Reel)";
+
+    gPlayer->addSequenceFromPlayerToSong(0); // Intro Groove
+    gPlayer->addSequenceFromPlayerToSong(1, 2); // Chorus Beat x2
+    gPlayer->addSequenceFromPlayerToSong(0); // Intro Groove
+
+    std::cout << "\nSéquences dans le morceau '" << gPlayer->currentSong->name << "':" << std::endl;
+    for (size_t i = 0; i < gPlayer->currentSong->sequences.size(); ++i) {
+        std::cout << "  Index " << i << ": " << gPlayer->currentSong->sequences[i]->name
+                  << " (Longueur: " << gPlayer->currentSong->sequences[i]->lengthInSteps << " pas)" << std::endl;
+    }
+    transport.printInfo();
+
+    std::cout << "\n--- Lecture en temps réel simulée du Morceau '" << gPlayer->currentSong->name << "' ---" << std::endl;
+    transport.play();
+    sleep(15); // Joue pendant 15 secondes pour voir le bouclage
+    transport.stop();
+    transport.printInfo();
+
+    std::cout << "\n--- Mute de la caisse claire dans la PREMIERE séquence du morceau et relecture en temps réel ---" << std::endl;
+    if (!gPlayer->currentSong->sequences.empty()) {
+        gPlayer->currentSong->sequences[0]->getTrack(1).isMuted = true;
+        std::cout << "Muting snare track on sequence '" << gPlayer->currentSong->sequences[0]->name << "'" << std::endl;
+    }
+    transport.play();
+    sleep(10); // Relecture pendant 10 secondes
+    transport.stop();
+
+    std::cout << "\n--- Suppression de la séquence à l'index 1 du morceau et relecture en temps réel ---" << std::endl;
+    gPlayer->deleteSequenceFromCurrentSong(1);
+    transport.printInfo(); // Afficher l'état après suppression
+    std::cout << "\nSéquences restantes dans le morceau '" << gPlayer->currentSong->name << "':" << std::endl;
+    for (size_t i = 0; i < gPlayer->currentSong->sequences.size(); ++i) {
+        std::cout << "  Index " << i << ": " << gPlayer->currentSong->sequences[i]->name
+                  << " (Addr: " << gPlayer->currentSong->sequences[i].get() << ")" << std::endl;
+    }
+    transport.play();
+    sleep(10); // Relecture après suppression
+    transport.stop();
+
 }
 
 // Fonction displayStatus simplifiée pour utiliser std::cout
@@ -78,7 +202,13 @@ void keyHandler() {
                 break;
             case 'p':
                 demo1();
-                _msgText = "Démonstration lancée.";
+                _msgText = "Démonstration 1 lancée.";
+                displayStatus(_msgText);
+                break;
+            
+            case 'P':
+                demo2();
+                _msgText = "Démonstration 2 lancée.";
                 displayStatus(_msgText);
                 break;
             case 'v':
