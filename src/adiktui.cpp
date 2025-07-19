@@ -102,6 +102,22 @@ void AdikTUI::keyHandler() {
                 _msgText = "Démonstration lancée.";
                 displayStatus(_msgText);
                 break;
+
+            case ' ': // Nouvelle case pour la barre d'espace
+                if (gPlayer) {
+                    if (gPlayer->isPlaying) { // Supposons une méthode isPlaying()
+                        gPlayer->stop();
+                        _msgText = "Séquenceur mis en pause.";
+                    } else {
+                        gPlayer->start();
+                        _msgText = "Séquenceur démarré.";
+                    }
+                } else {
+                    _msgText = "Erreur: Player non initialisé.";
+                }
+                displayStatus(_msgText);
+                break;
+
             default:
                 // Manage key from '0' to '9'
                 if (key >= '0' && key <= '9') {

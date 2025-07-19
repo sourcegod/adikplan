@@ -57,10 +57,10 @@ void processAudioCallback(float* outputBuffer, unsigned int numSamples, void* us
     for (unsigned int i = 0; i < numSamples; ++i) {
         if (playerData->isPlaying && currentPlayingSequence) {
             playerData->currentSampleInStep++;
+            // std::cout << "\a";  
             if (playerData->currentSampleInStep >= playerData->samplesPerStep) {
                 playerData->advanceStep(currentPlayingSequence);
                 playerData->currentSampleInStep = 0;
-              // std::cout << "\a";  
             }
         }
     }

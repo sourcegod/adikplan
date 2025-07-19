@@ -88,11 +88,22 @@ public:
     }
 
     void loadDefaultInstruments() {
-        auto sineSynth = std::make_shared<AdikInstrument>("synth_sine", "Synth Sine 440Hz", "none", 1);
+       
+      auto sineSynth = std::make_shared<AdikInstrument>("synth_sine", "Synth Sine 440Hz", "none", 1);
         sineSynth->genTone(AdikInstrument::SINE_WAVE, 440.0f, 44100, 0.5f); // Ajout du paramètre amplitude
         sineSynth->defaultVolume = 0.5f;
         addInstrument(sineSynth);
 
+
+        // /* (vos instruments basés sur fichiers) */
+        addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("hihat_closed_1", "Charley Fermé", "path/to/hihat_closed.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("hihat_open_1", "Charley Ouvert", "path/to/hihat_open.wav", 1));
+        addInstrument(std::make_shared<AdikInstrument>("clap_1", "Clap", "path/to/clap.wav", 1));
+        // */
+        
+        // /*
         auto squareSynth = std::make_shared<AdikInstrument>("synth_square", "Synth Square 220Hz", "none", 1);
         squareSynth->genTone(AdikInstrument::SQUARE_WAVE, 220.0f, 44100, 0.5f); // Ajout du paramètre amplitude
         squareSynth->defaultVolume = 0.1f;
@@ -109,14 +120,8 @@ public:
         sineNoiseSynth->genTone(AdikInstrument::COMBINED_SINE_NOISE_WAVE, 440.0f, 44100);
         sineNoiseSynth->defaultVolume = 0.5f;
         addInstrument(sineNoiseSynth);
-
-        // /* (vos instruments basés sur fichiers) */
-        addInstrument(std::make_shared<AdikInstrument>("kick_1", "Grosse Caisse", "path/to/kick.wav", 1));
-        addInstrument(std::make_shared<AdikInstrument>("snare_1", "Caisse Claire", "path/to/snare.wav", 1));
-        addInstrument(std::make_shared<AdikInstrument>("hihat_closed_1", "Charley Fermé", "path/to/hihat_closed.wav", 1));
-        addInstrument(std::make_shared<AdikInstrument>("hihat_open_1", "Charley Ouvert", "path/to/hihat_open.wav", 1));
-        addInstrument(std::make_shared<AdikInstrument>("clap_1", "Clap", "path/to/clap.wav", 1));
         // */
+
 
         std::cout << "AdikPlayer: Instruments par défaut chargés." << std::endl;
     }
@@ -194,8 +199,11 @@ public:
 
     // Récupère un instrument par son ID
     std::shared_ptr<AdikInstrument> getInstrument(const std::string& id) {
-        for (const auto& instru: instrumentList) {
-            if (instru->id == id) return instru;
+      for (const auto& instru: instrumentList) {
+            if (instru->id == id) { 
+              std::cout << "voici l'instru trouvé: " << instru->id << "\n";
+              return instru;
+            }
         }
         throw std::runtime_error("Instrument avec l'ID '" + id + "' non trouvé.");
         return nullptr; // Ne devrait pas être atteint grâce à throw
